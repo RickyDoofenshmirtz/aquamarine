@@ -20,6 +20,9 @@ endif()
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 add_executable(aquamarine ${SRC_FILES})
 
+add_subdirectory(include)
+target_link_libraries(aquamarine PRIVATE lib_aqua)
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_link_libraries(aquamarine PRIVATE stdc++exp)
     message(STATUS "using g++, linking stdc++exp")
