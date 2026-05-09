@@ -13,12 +13,17 @@ class optional
 public:
     using value_type = std::optional<T>::value_type;
 
+    explicit optional() noexcept
+        : m_data(std::nullopt)
+    {
+    }
+
     optional([[maybe_unused]] std::nullopt_t _) noexcept
         : m_data(std::nullopt)
     {
     }
 
-    static auto empty() noexcept -> optional { return optional{ std::nullopt }; }
+    static auto empty() noexcept -> optional { return optional{}; }
 
     template <typename... Args>
         requires(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
@@ -147,7 +152,7 @@ public:
 
     auto as_ref() const noexcept -> optional<const T&>
     {
-        if (!has_value()) { return optional<T&>::empty(); }
+        if (!has_value()) { return optional<const T&>::empty(); }
         return optional<const T&>::create(*m_data);
     }
 
