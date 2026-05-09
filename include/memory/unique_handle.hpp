@@ -302,20 +302,6 @@ public:
         return (*self.m_data);
     }
 
-    [[nodiscard]]
-    auto as_ref() noexcept -> optional<unique_handle<T>&>
-    {
-        if (is_empty()) { return std::nullopt; }
-        return optional<unique_handle<T>&>::create(m_data);
-    }
-
-    [[nodiscard]]
-    auto as_ref() const noexcept -> optional<const unique_handle<T>&>
-    {
-        if (is_empty()) { return std::nullopt; }
-        return optional<const unique_handle<T>&>::create(m_data);
-    }
-
     void reset() noexcept
     {
         if (is_empty()) { return; }
