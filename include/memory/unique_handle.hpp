@@ -21,9 +21,7 @@ public:
     using value_type = T;
 
     template <typename... Args>
-        requires(
-            std::is_nothrow_constructible_v<value_type, Args...> &&
-            std::is_nothrow_destructible_v<value_type>)
+        requires(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
     static auto create(Args&&... args) noexcept -> unique_handle
     {
         void* ptr = ::operator new(sizeof(value_type), std::nothrow);
@@ -33,15 +31,11 @@ public:
     }
 
     static auto default_create() noexcept -> unique_handle
-        requires(
-            std::is_nothrow_default_constructible_v<value_type> &&
-            std::is_nothrow_destructible_v<value_type>)
+        requires(std::is_nothrow_default_constructible_v<T> && std::is_nothrow_destructible_v<T>)
     { return create(); }
 
     template <typename... Args>
-        requires(
-            std::is_constructible_v<value_type, Args...> &&
-            std::is_nothrow_destructible_v<value_type>)
+        requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
     static auto try_create(Args&&... args) noexcept -> optional<unique_handle>
     {
         void* ptr = ::operator new(sizeof(value_type), std::nothrow);
@@ -56,9 +50,7 @@ public:
     }
 
     template <typename... Args>
-        requires(
-            std::is_constructible_v<value_type, Args...> &&
-            std::is_nothrow_destructible_v<value_type>)
+        requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
     static auto force_create(Args&&... args) noexcept -> unique_handle
     {
         void* ptr{};
@@ -73,7 +65,7 @@ public:
     }
 
     static auto from_raw(value_type*& data_ptr) noexcept -> optional<unique_handle>
-        requires(std::is_nothrow_destructible_v<value_type>)
+        requires(std::is_nothrow_destructible_v<T>)
     {
         if (data_ptr == nullptr) { return std::nullopt; }
         return optional{ unique_handle{ std::exchange(data_ptr, nullptr) } };
@@ -140,5 +132,6 @@ public:
     }
 
 private:
-    value_type* m_data_ptr;
+    T* m_data_ptr;
 };
+
