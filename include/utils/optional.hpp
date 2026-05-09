@@ -34,14 +34,6 @@ public:
 
     template <typename... Args>
         requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
-    static auto except_create(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>)
-        -> optional
-    {
-        return optional{ std::forward<Args>(args)... }; //
-    }
-
-    template <typename... Args>
-        requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
     static auto force_create(Args&&... args) noexcept -> optional
     {
         try {
@@ -61,20 +53,11 @@ public:
 
     template <typename... Args>
         requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
-    auto except_emplace(Args&&... args) noexcept(std::is_nothrow_constructible_v<T, Args...>) -> T&
-    {
-        reset();
-        return m_data.emplace(std::forward<Args>(args)...);
-    }
-
-    template <typename... Args>
-        requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
     auto force_emplace(Args&&... args) noexcept -> T&
     {
         try {
             reset();
-            auto& elm = m_data.emplace(std::forward<Args>(args)...);
-            return elm;
+            return m_data.emplace(std::forward<Args>(args)...);
         } catch (...) {
             std::terminate();
         }
