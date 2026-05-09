@@ -2,6 +2,7 @@
 
 #include "handle_view.hpp"
 #include "utils/optional.hpp"
+#include "utils/traits.hpp"
 
 #include <cassert>
 #include <exception>
@@ -135,3 +136,132 @@ private:
     T* m_data_ptr;
 };
 
+template <typename T>
+class optional<unique_handle<T>>
+{
+public:
+    using value_type = T;
+
+    template <typename... Args>
+        requires(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
+    static auto create(Args&&... args) noexcept -> optional
+    {
+        return force_create(std::forward<Args>(args)...); //
+    }
+
+    template <typename... Args>
+        requires(
+            !std::is_nothrow_constructible_v<T, Args...> && creatable<T, Args...> &&
+            std::is_nothrow_destructible_v<T>)
+    static auto create(Args&&... args) noexcept -> optional
+    {
+        void* ptr = ::operator new(sizeof(value_type), std::nothrow);
+        if (ptr == nullptr) [[unlikely]] { std::terminate(); }
+        try {
+            auto* data_ptr = new(ptr) T(T::create(std::forward<Args>(args)...));
+            return optional{ data_ptr };
+        } catch (...) {
+            ::operator delete(ptr);
+            std::terminate();
+        }
+    }
+
+    template <typename... Args>
+        requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
+    static auto force_create(Args&&... args) noexcept -> optional
+    {
+        void* ptr = ::operator new(sizeof(value_type), std::nothrow);
+        if (ptr == nullptr) [[unlikely]] { std::terminate(); }
+        try {
+            auto* data_ptr = new(ptr) value_type(std::forward<Args>(args)...);
+            return optional{ data_ptr };
+        } catch (...) {
+            ::operator delete(ptr);
+            std::terminate();
+        }
+    }
+
+    explicit operator bool() const noexcept { return m_data.m_data_ptr != nullptr; }
+
+    auto has_value() const noexcept -> bool { return m_data.m_data_ptr != nullptr; }
+
+    auto is_empty() const noexcept -> bool { return !has_value(); }
+
+    auto operator*() & noexcept -> unique_handle<T>&
+    {
+        assert(has_value());
+        return m_data;
+    }
+
+    auto operator*() const& noexcept -> unique_handle<T> const&
+    {
+        assert(has_value());
+        return m_data;
+    }
+
+    auto operator*() && noexcept -> unique_handle<T>&&
+    {
+        assert(has_value());
+        return std::move(m_data);
+    }
+
+    auto operator*() const&& noexcept -> unique_handle<T> const&&
+    {
+        assert(has_value());
+        return std::move(m_data);
+    }
+
+    auto operator->(this auto&& self) noexcept { return self.m_data.m_data_ptr; }
+
+    auto value() & noexcept -> unique_handle<T>&
+    {
+        assert(has_value());
+        return m_data;
+    }
+
+    auto value() const& noexcept -> unique_handle<T> const&
+    {
+        assert(has_value());
+        return m_data;
+    }
+
+    auto value() && noexcept -> unique_handle<T>&&
+    {
+        assert(has_value());
+        return std::move(m_data);
+    }
+
+    auto value() const&& noexcept -> unique_handle<T> const&&
+    {
+        assert(has_value());
+        return std::move(m_data);
+    }
+
+    auto deref(this auto&& self) noexcept -> decltype(auto)
+    {
+        assert(self.has_value());
+        return (*self.m_data);
+    }
+
+    auto as_ref() noexcept -> optional<unique_handle<T>&>
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<unique_handle<T>&>::create(m_data);
+    }
+
+    auto as_ref() const noexcept -> optional<const unique_handle<T>&>
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<const unique_handle<T>&>::create(m_data);
+    }
+
+    
+
+private:
+    explicit optional(T* data_ptr) noexcept
+        : m_data(data_ptr)
+    {
+    }
+
+    unique_handle<T> m_data;
+};
