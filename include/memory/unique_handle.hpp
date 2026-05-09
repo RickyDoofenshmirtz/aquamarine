@@ -26,9 +26,9 @@ public:
     [[nodiscard]]
     static auto create(Args&&... args) noexcept -> unique_handle
     {
-        void* ptr = ::operator new(sizeof(value_type), std::nothrow);
+        void* ptr = ::operator new(sizeof(T), std::nothrow);
         if (ptr == nullptr) [[unlikely]] { std::terminate(); }
-        auto* data_ptr = new(ptr) value_type(std::forward<Args>(args)...);
+        T* data_ptr = new(ptr) T(std::forward<Args>(args)...);
         return unique_handle{ data_ptr };
     }
 
@@ -39,9 +39,9 @@ public:
     [[nodiscard]]
     static auto create(Args&&... args) noexcept -> unique_handle
     {
-        void* ptr = ::operator new(sizeof(value_type), std::nothrow);
+        void* ptr = ::operator new(sizeof(T), std::nothrow);
         if (ptr == nullptr) [[unlikely]] { std::terminate(); }
-        auto* data_ptr = new(ptr) value_type(value_type::create(std::forward<Args>(args)...));
+        T* data_ptr = new(ptr) T(T::create(std::forward<Args>(args)...));
         return unique_handle{ data_ptr };
     }
 
@@ -55,10 +55,10 @@ public:
     [[nodiscard]]
     static auto try_create(Args&&... args) noexcept -> optional<unique_handle>
     {
-        void* ptr = ::operator new(sizeof(value_type), std::nothrow);
+        void* ptr = ::operator new(sizeof(T), std::nothrow);
         if (ptr == nullptr) [[unlikely]] { return std::nullopt; }
         try {
-            auto* data_ptr = new(ptr) value_type(std::forward<Args>(args)...);
+            T* data_ptr = new(ptr) T(std::forward<Args>(args)...);
             return optional{ unique_handle{ data_ptr } };
         } catch (...) {
             ::operator delete(ptr);
@@ -73,8 +73,8 @@ public:
     {
         void* ptr{};
         try {
-            ptr            = ::operator new(sizeof(value_type));
-            auto* data_ptr = new(ptr) value_type(std::forward<Args>(args)...);
+            ptr         = ::operator new(sizeof(T));
+            T* data_ptr = new(ptr) T(std::forward<Args>(args)...);
             return unique_handle{ data_ptr };
         } catch (...) {
             ::operator delete(ptr);
@@ -83,15 +83,15 @@ public:
     }
 
     [[nodiscard]]
-    static auto from_raw(value_type*& data_ptr) noexcept -> optional<unique_handle>
+    static auto from_raw(T*& data_ptr) noexcept -> optional<unique_handle>
         requires(std::is_nothrow_destructible_v<T>)
     {
         if (data_ptr == nullptr) { return std::nullopt; }
         return optional{ unique_handle{ std::exchange(data_ptr, nullptr) } };
     }
 
-    [[nodiscard]] auto ptr() noexcept -> value_type* { return m_data_ptr; }
-    [[nodiscard]] auto ptr() const noexcept -> value_type const* { return m_data_ptr; }
+    [[nodiscard]] auto ptr() noexcept -> T* { return m_data_ptr; }
+    [[nodiscard]] auto ptr() const noexcept -> T const* { return m_data_ptr; }
 
     [[nodiscard]]
     auto valueless_after_move() const noexcept -> bool
@@ -118,7 +118,7 @@ public:
 private:
     [[nodiscard]] explicit operator bool() const noexcept { return m_data_ptr != nullptr; }
 
-    explicit unique_handle(value_type* data_ptr) noexcept
+    explicit unique_handle(T* data_ptr) noexcept
         : m_data_ptr(data_ptr)
     {
     }
@@ -159,7 +159,7 @@ template <typename T>
 class optional<unique_handle<T>>
 {
 public:
-    using value_type     = T;
+    using value_type     = unique_handle<T>;
     using iterator       = unique_handle<T>*;
     using const_iterator = const unique_handle<T>*;
 
@@ -195,10 +195,10 @@ public:
     [[nodiscard]]
     static auto create(Args&&... args) noexcept -> optional
     {
-        void* ptr = ::operator new(sizeof(value_type), std::nothrow);
+        void* ptr = ::operator new(sizeof(T), std::nothrow);
         if (ptr == nullptr) [[unlikely]] { std::terminate(); }
         try {
-            auto* data_ptr = new(ptr) T(T::create(std::forward<Args>(args)...));
+            T* data_ptr = new(ptr) T(T::create(std::forward<Args>(args)...));
             return optional{ data_ptr };
         } catch (...) {
             ::operator delete(ptr);
@@ -211,10 +211,10 @@ public:
     [[nodiscard]]
     static auto force_create(Args&&... args) noexcept -> optional
     {
-        void* ptr = ::operator new(sizeof(value_type), std::nothrow);
+        void* ptr = ::operator new(sizeof(T), std::nothrow);
         if (ptr == nullptr) [[unlikely]] { std::terminate(); }
         try {
-            auto* data_ptr = new(ptr) value_type(std::forward<Args>(args)...);
+            T* data_ptr = new(ptr) T(std::forward<Args>(args)...);
             return optional{ data_ptr };
         } catch (...) {
             ::operator delete(ptr);

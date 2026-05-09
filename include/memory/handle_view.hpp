@@ -11,12 +11,12 @@ class handle_view
 public:
     using value_type = T;
 
-    explicit constexpr handle_view(value_type& data_ptr) noexcept
+    explicit constexpr handle_view(T& data_ptr) noexcept
         : m_data_ptr(std::addressof(data_ptr))
     {
     }
 
-    explicit constexpr handle_view(value_type* data_ptr) noexcept
+    explicit constexpr handle_view(T* data_ptr) noexcept
         : m_data_ptr(data_ptr)
     {
     }
@@ -34,8 +34,8 @@ public:
 
     [[nodiscard]] explicit constexpr operator bool() const noexcept { return has_value(); }
 
-    [[nodiscard]] constexpr auto ptr() noexcept -> value_type* { return m_data_ptr; }
-    [[nodiscard]] constexpr auto ptr() const noexcept -> const value_type* { return m_data_ptr; }
+    [[nodiscard]] constexpr auto ptr() noexcept -> T* { return m_data_ptr; }
+    [[nodiscard]] constexpr auto ptr() const noexcept -> T const* { return m_data_ptr; }
 
     [[nodiscard]]
     constexpr auto operator*(this auto&& self) noexcept -> decltype(auto)
@@ -51,13 +51,13 @@ public:
         return self.ptr();
     }
 
-    constexpr auto reset() noexcept -> value_type* { return reset_to(nullptr); }
+    constexpr auto reset() noexcept -> T* { return reset_to(nullptr); }
 
-    constexpr auto reset_to(value_type* data_ptr) noexcept -> value_type*
+    constexpr auto reset_to(T* data_ptr) noexcept -> T*
     { return std::exchange(m_data_ptr, data_ptr); }
 
 private:
-    value_type* m_data_ptr{};
+    T* m_data_ptr{};
 };
 
 template <typename T>
