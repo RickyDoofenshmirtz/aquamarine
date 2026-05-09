@@ -23,10 +23,11 @@ public:
     {
     }
 
-    static auto empty() noexcept -> optional { return optional{}; }
+    [[nodiscard]] static auto empty() noexcept -> optional { return optional{}; }
 
     template <typename... Args>
         requires(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
+    [[nodiscard]]
     static auto create(Args&&... args) noexcept -> optional
     {
         return optional{ std::forward<Args>(args)... }; //
@@ -34,6 +35,7 @@ public:
 
     template <typename... Args>
         requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
+    [[nodiscard]]
     static auto force_create(Args&&... args) noexcept -> optional
     {
         try {
@@ -65,74 +67,85 @@ public:
 
     void reset() noexcept { m_data.reset(); }
 
-    explicit operator bool() const noexcept { return m_data.has_value(); }
+    [[nodiscard]] explicit operator bool() const noexcept { return m_data.has_value(); }
 
-    auto has_value() const noexcept -> bool { return m_data.has_value(); }
+    [[nodiscard]] auto has_value() const noexcept -> bool { return m_data.has_value(); }
 
+    [[nodiscard]]
     auto operator*() & noexcept -> T&
     {
         assert(has_value());
         return *m_data;
     }
 
+    [[nodiscard]]
     auto operator*() const& noexcept -> T const&
     {
         assert(has_value());
         return *m_data;
     }
 
+    [[nodiscard]]
     auto operator*() && noexcept -> T&&
     {
         assert(has_value());
         return std::move(*m_data);
     }
 
+    [[nodiscard]]
     auto operator*() const&& noexcept -> T const&&
     {
         assert(has_value());
         return std::move(*m_data);
     }
 
+    [[nodiscard]]
     auto operator->(this auto&& self) noexcept
     {
         assert(self);
         return std::addressof(*self.m_data);
     }
 
+    [[nodiscard]]
     auto value() & noexcept -> T&
     {
         assert(has_value());
         return *m_data;
     }
 
+    [[nodiscard]]
     auto value() const& noexcept -> T const&
     {
         assert(has_value());
         return *m_data;
     }
 
+    [[nodiscard]]
     auto value() && noexcept -> T&&
     {
         assert(has_value());
         return std::move(*m_data);
     }
 
+    [[nodiscard]]
     auto value() const&& noexcept -> T const&&
     {
         assert(has_value());
         return std::move(*m_data);
     }
 
-    auto begin(this auto&& self) noexcept { return self.m_data.begin(); }
+    [[nodiscard]] auto begin(this auto&& self) noexcept { return self.m_data.begin(); }
 
-    auto end(this auto&& self) noexcept { return self.m_data.end(); }
+    [[nodiscard]] auto end(this auto&& self) noexcept { return self.m_data.end(); }
 
+    [[nodiscard]]
     auto as_ref() noexcept -> optional<T&>
     {
         if (!has_value()) { return optional<T&>::empty(); }
         return optional<T&>::create(*m_data);
     }
 
+    [[nodiscard]]
     auto as_ref() const noexcept -> optional<const T&>
     {
         if (!has_value()) { return optional<const T&>::empty(); }
