@@ -159,7 +159,9 @@ template <typename T>
 class optional<unique_handle<T>>
 {
 public:
-    using value_type = T;
+    using value_type     = T;
+    using iterator       = unique_handle<T>*;
+    using const_iterator = const unique_handle<T>*;
 
     explicit optional() noexcept
         : m_data(nullptr)
@@ -225,6 +227,15 @@ public:
     [[nodiscard]] auto has_value() const noexcept -> bool { return m_data.m_data_ptr != nullptr; }
 
     [[nodiscard]] auto is_empty() const noexcept -> bool { return !has_value(); }
+
+    [[nodiscard]] auto begin() noexcept -> iterator
+    { return (has_value()) ? std::addressof(m_data) : nullptr; }
+
+    [[nodiscard]] auto begin() const noexcept -> const_iterator
+    { return (has_value()) ? std::addressof(m_data) : nullptr; }
+
+    [[nodiscard]] auto end() noexcept -> iterator { return begin() + has_value(); }
+    [[nodiscard]] auto end() const noexcept -> const_iterator { return begin() + has_value(); }
 
     [[nodiscard]]
     auto operator*() & noexcept -> unique_handle<T>&
