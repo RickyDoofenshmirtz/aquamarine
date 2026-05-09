@@ -31,6 +31,18 @@ public:
         return unique_handle{ data_ptr };
     }
 
+    template <typename... Args>
+        requires(
+            !std::is_nothrow_constructible_v<T, Args...> && //
+            creatable<T, Args...> && std::is_nothrow_destructible_v<T>)
+    static auto create(Args&&... args) noexcept -> unique_handle
+    {
+        void* ptr = ::operator new(sizeof(value_type), std::nothrow);
+        if (ptr == nullptr) [[unlikely]] { std::terminate(); }
+        auto* data_ptr = new(ptr) value_type(value_type::create(std::forward<Args>(args)...));
+        return unique_handle{ data_ptr };
+    }
+
     static auto default_create() noexcept -> unique_handle
         requires(std::is_nothrow_default_constructible_v<T> && std::is_nothrow_destructible_v<T>)
     { return create(); }
