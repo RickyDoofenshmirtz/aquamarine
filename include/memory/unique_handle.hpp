@@ -1,0 +1,146 @@
+#pragma once
+
+#include "handle_view.hpp"
+
+#include <cassert>
+#include <exception>
+#include <memory>
+#include <new>
+#include <optional>
+#include <type_traits>
+#include <utility>
+
+template <typename T>
+    requires(std::is_same_v<T, std::remove_cvref_t<T>>)
+class optional_handle;
+
+template <typename T>
+    requires(std::is_same_v<T, std::remove_cvref_t<T>>)
+class unique_handle
+{
+    friend class optional_handle<T>;
+
+public:
+    using value_type = T;
+
+    template <typename... Args>
+        requires(
+            std::is_nothrow_constructible_v<value_type, Args...> &&
+            std::is_nothrow_destructible_v<value_type>)
+    static auto construct(Args&&... args) noexcept -> unique_handle
+    {
+        void* ptr = ::operator new(sizeof(value_type), std::nothrow);
+        if (ptr == nullptr) [[unlikely]] { std::terminate(); }
+        auto* data_ptr = new(ptr) value_type(std::forward<Args>(args)...);
+        return unique_handle{ data_ptr };
+    }
+
+    static auto default_construct() noexcept -> unique_handle
+        requires(
+            std::is_nothrow_default_constructible_v<value_type> &&
+            std::is_nothrow_destructible_v<value_type>)
+    { return construct(); }
+
+    template <typename... Args>
+        requires(
+            std::is_constructible_v<value_type, Args...> &&
+            std::is_nothrow_destructible_v<value_type>)
+    static auto try_construct(Args&&... args) noexcept -> std::optional<unique_handle>
+    {
+        void* ptr = ::operator new(sizeof(value_type), std::nothrow);
+        if (ptr == nullptr) [[unlikely]] { return std::nullopt; }
+        try {
+            auto* data_ptr = new(ptr) value_type(std::forward<Args>(args)...);
+            return std::optional{ unique_handle{ data_ptr } };
+        } catch (...) {
+            ::operator delete(ptr);
+            return std::nullopt;
+        }
+    }
+
+    template <typename... Args>
+        requires(
+            std::is_constructible_v<value_type, Args...> &&
+            std::is_nothrow_destructible_v<value_type>)
+    static auto force_construct(Args&&... args) noexcept -> unique_handle
+    {
+        void* ptr{};
+        try {
+            ptr            = ::operator new(sizeof(value_type));
+            auto* data_ptr = new(ptr) value_type(std::forward<Args>(args)...);
+            return unique_handle{ data_ptr };
+        } catch (...) {
+            ::operator delete(ptr);
+            std::terminate();
+        }
+    }
+
+    static auto from_raw(value_type*& data_ptr) noexcept -> std::optional<unique_handle>
+        requires(std::is_nothrow_destructible_v<value_type>)
+    {
+        if (data_ptr == nullptr) { return std::nullopt; }
+        return std::optional{ unique_handle{ std::exchange(data_ptr, nullptr) } };
+    }
+
+    [[nodiscard]] explicit operator bool() const noexcept { return m_data_ptr != nullptr; }
+
+    [[nodiscard]] auto ptr() noexcept -> value_type* { return m_data_ptr; }
+    [[nodiscard]] auto ptr() const noexcept -> const value_type* { return m_data_ptr; }
+
+    [[nodiscard]] auto cptr() const noexcept -> const value_type* { return m_data_ptr; }
+
+    [[nodiscard]]
+    auto operator*(this auto&& self) noexcept -> decltype(auto)
+    {
+        assert(self);
+        return (*self.ptr());
+    }
+
+    [[nodiscard]]
+    auto operator->(this auto&& self) noexcept -> decltype(auto)
+    {
+        assert(self);
+        return self.ptr();
+    }
+
+    [[nodiscard]] auto deref(this auto&& self) noexcept -> decltype(auto) { return (*self); }
+
+    [[nodiscard]] auto view(this auto&& self) noexcept { return handle_view{ self.ptr() }; }
+
+private:
+    explicit unique_handle(value_type* data_ptr) noexcept
+        : m_data_ptr(data_ptr)
+    {
+    }
+
+public:
+    unique_handle(const unique_handle&)                    = delete;
+    auto operator=(const unique_handle&) -> unique_handle& = delete;
+
+    unique_handle(unique_handle&& src) noexcept
+        : m_data_ptr(std::exchange(src.m_data_ptr, nullptr))
+    {
+    }
+
+    auto operator=(unique_handle&& src) noexcept -> unique_handle&
+    {
+        if (this == std::addressof(src)) { return *this; }
+        if (m_data_ptr != nullptr) //
+        {
+            std::destroy_at(m_data_ptr);
+            ::operator delete(m_data_ptr);
+        }
+        m_data_ptr = std::exchange(src.m_data_ptr, nullptr);
+        return *this;
+    }
+
+    ~unique_handle() noexcept
+    {
+        if (m_data_ptr == nullptr) { return; }
+        std::destroy_at(m_data_ptr);
+        ::operator delete(m_data_ptr);
+    }
+
+private:
+    value_type* m_data_ptr;
+};
