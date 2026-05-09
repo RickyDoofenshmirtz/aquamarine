@@ -1,6 +1,7 @@
 #pragma once
 
 #include "handle_view.hpp"
+#include "utils/optional.hpp"
 
 #include <cassert>
 #include <exception>
@@ -12,13 +13,9 @@
 
 template <typename T>
     requires(std::is_same_v<T, std::remove_cvref_t<T>>)
-class optional_handle;
-
-template <typename T>
-    requires(std::is_same_v<T, std::remove_cvref_t<T>>)
 class unique_handle
 {
-    friend class optional_handle<T>;
+    friend class optional<unique_handle<T>>;
 
 public:
     using value_type = T;
@@ -27,7 +24,7 @@ public:
         requires(
             std::is_nothrow_constructible_v<value_type, Args...> &&
             std::is_nothrow_destructible_v<value_type>)
-    static auto construct(Args&&... args) noexcept -> unique_handle
+    static auto create(Args&&... args) noexcept -> unique_handle
     {
         void* ptr = ::operator new(sizeof(value_type), std::nothrow);
         if (ptr == nullptr) [[unlikely]] { std::terminate(); }
@@ -35,23 +32,23 @@ public:
         return unique_handle{ data_ptr };
     }
 
-    static auto default_construct() noexcept -> unique_handle
+    static auto default_create() noexcept -> unique_handle
         requires(
             std::is_nothrow_default_constructible_v<value_type> &&
             std::is_nothrow_destructible_v<value_type>)
-    { return construct(); }
+    { return create(); }
 
     template <typename... Args>
         requires(
             std::is_constructible_v<value_type, Args...> &&
             std::is_nothrow_destructible_v<value_type>)
-    static auto try_construct(Args&&... args) noexcept -> std::optional<unique_handle>
+    static auto try_create(Args&&... args) noexcept -> optional<unique_handle>
     {
         void* ptr = ::operator new(sizeof(value_type), std::nothrow);
         if (ptr == nullptr) [[unlikely]] { return std::nullopt; }
         try {
             auto* data_ptr = new(ptr) value_type(std::forward<Args>(args)...);
-            return std::optional{ unique_handle{ data_ptr } };
+            return optional{ unique_handle{ data_ptr } };
         } catch (...) {
             ::operator delete(ptr);
             return std::nullopt;
@@ -62,7 +59,7 @@ public:
         requires(
             std::is_constructible_v<value_type, Args...> &&
             std::is_nothrow_destructible_v<value_type>)
-    static auto force_construct(Args&&... args) noexcept -> unique_handle
+    static auto force_create(Args&&... args) noexcept -> unique_handle
     {
         void* ptr{};
         try {
@@ -75,39 +72,40 @@ public:
         }
     }
 
-    static auto from_raw(value_type*& data_ptr) noexcept -> std::optional<unique_handle>
+    static auto from_raw(value_type*& data_ptr) noexcept -> optional<unique_handle>
         requires(std::is_nothrow_destructible_v<value_type>)
     {
         if (data_ptr == nullptr) { return std::nullopt; }
-        return std::optional{ unique_handle{ std::exchange(data_ptr, nullptr) } };
+        return optional{ unique_handle{ std::exchange(data_ptr, nullptr) } };
     }
 
-    [[nodiscard]] explicit operator bool() const noexcept { return m_data_ptr != nullptr; }
-
     [[nodiscard]] auto ptr() noexcept -> value_type* { return m_data_ptr; }
-    [[nodiscard]] auto ptr() const noexcept -> const value_type* { return m_data_ptr; }
+    [[nodiscard]] auto ptr() const noexcept -> value_type const* { return m_data_ptr; }
 
-    [[nodiscard]] auto cptr() const noexcept -> const value_type* { return m_data_ptr; }
+    [[nodiscard]] auto valueless_after_move() const noexcept -> bool
+    { return m_data_ptr == nullptr; }
 
     [[nodiscard]]
     auto operator*(this auto&& self) noexcept -> decltype(auto)
     {
         assert(self);
-        return (*self.ptr());
+        return (*self.m_data_ptr);
     }
 
     [[nodiscard]]
     auto operator->(this auto&& self) noexcept -> decltype(auto)
     {
         assert(self);
-        return self.ptr();
+        return self.m_data_ptr;
     }
 
-    [[nodiscard]] auto deref(this auto&& self) noexcept -> decltype(auto) { return (*self); }
+    [[nodiscard]] auto value(this auto&& self) noexcept -> decltype(auto) { return (*self); }
 
-    [[nodiscard]] auto view(this auto&& self) noexcept { return handle_view{ self.ptr() }; }
+    [[nodiscard]] auto view(this auto&& self) noexcept { return handle_view{ self.m_data_ptr }; }
 
 private:
+    [[nodiscard]] explicit operator bool() const noexcept { return m_data_ptr != nullptr; }
+
     explicit unique_handle(value_type* data_ptr) noexcept
         : m_data_ptr(data_ptr)
     {
