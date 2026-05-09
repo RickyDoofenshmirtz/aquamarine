@@ -142,6 +142,21 @@ class optional<unique_handle<T>>
 public:
     using value_type = T;
 
+    explicit optional() noexcept
+        : m_data(nullptr)
+    {
+    }
+
+    optional([[maybe_unused]] std::nullopt_t _) noexcept
+        : m_data(nullptr)
+    {
+    }
+
+    explicit optional(unique_handle<T>&& data) noexcept
+        : m_data(std::move(data))
+    {
+    }
+
     template <typename... Args>
         requires(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
     static auto create(Args&&... args) noexcept -> optional
@@ -255,7 +270,48 @@ public:
         return optional<const unique_handle<T>&>::create(m_data);
     }
 
-    
+    void reset() noexcept
+    {
+        if (is_empty()) { return; }
+        std::destroy_at(m_data.m_data_ptr);
+        ::operator delete(m_data.m_data_ptr);
+        m_data.m_data_ptr = nullptr;
+    }
+
+    template <typename... Args>
+        requires(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
+    auto emplace(this auto& self, Args&&... args) noexcept -> T&
+    {
+        auto& data_ptr = self.m_data.m_data_ptr;
+        if (self.is_empty()) {
+            data_ptr = static_cast<T*>(::operator new(sizeof(T), std::nothrow));
+            if (data_ptr == nullptr) [[unlikely]] { std::terminate(); }
+        } else {
+            std::destroy_at(data_ptr);
+        }
+        std::construct_at(data_ptr, std::forward<Args>(args)...);
+        return self.deref();
+    }
+
+    template <typename... Args>
+        requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
+    auto force_emplace(this auto& self, Args&&... args) noexcept -> T&
+    {
+        auto& data_ptr = self.m_data.m_data_ptr;
+        if (self.is_empty()) {
+            data_ptr = static_cast<T*>(::operator new(sizeof(T), std::nothrow));
+            if (data_ptr == nullptr) [[unlikely]] { std::terminate(); }
+        } else {
+            std::destroy_at(data_ptr);
+        }
+        try {
+            std::construct_at(data_ptr, std::forward<Args>(args)...);
+        } catch (...) {
+            ::operator delete(data_ptr);
+            std::terminate();
+        }
+        return self.deref();
+    }
 
 private:
     explicit optional(T* data_ptr) noexcept

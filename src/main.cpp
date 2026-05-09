@@ -16,16 +16,20 @@ namespace {
     void func() noexcept
     {
         using handle_type     = unique_handle<coordinate>;
-        using opt_handle_type = optional<unique_handle<coordinate>>;
+        using opt_handle_type = optional<handle_type>;
+        static_assert(sizeof(handle_type) == sizeof(opt_handle_type));
 
-        [[maybe_unused]] static constexpr auto s1 = sizeof(handle_type);
-        [[maybe_unused]] static constexpr auto s2 = sizeof(opt_handle_type);
-
-        auto c1 = opt_handle_type::create(5, 9);
+        auto c1 = opt_handle_type::create();
+        c1.emplace(5, 6);
         if (c1) {
             auto [x, y] = c1.deref();
             std::println("{}, {}", x, y);
         }
+        auto c_ref       = c1.as_ref();
+        c_ref->value().x = 100;
+        c_ref->value().y = 200;
+        auto [x, y]      = c1.deref();
+        std::println("{}, {}", x, y);
     }
 }
 
