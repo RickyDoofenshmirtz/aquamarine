@@ -10,6 +10,7 @@ namespace {
     public:
         static auto create(int x) noexcept -> entity { return entity{ x }; }
 
+        auto value() noexcept -> int& { return m_x; }
         auto value() const noexcept -> int const& { return m_x; }
 
     private:
@@ -37,23 +38,38 @@ namespace {
         auto data = unique_handle<int>::create(x);
         return optional{ data };
         return optional<unique_handle<int>>::create(x);
+        return as_opt(data);
     }
 
+    [[maybe_unused]]
     void func() noexcept
     {
-        auto op_data = get_data(5);
+        const auto op_data = get_data(5);
         if (!op_data) { return; }
         auto& data = *op_data;
-        auto val   = *data;
+        auto& val  = *data;
         std::println("{}", val);
-        auto en = get_ent(val);
-        if (en) { std::println("en = {}", en->value()); }
-        // auto ref_en = en.as_ref();
+        auto en     = get_ent(val);
+        auto ref_en = en.as_ref();
+        if (en) { std::println("en = {}", ref_en->value()); }
+    }
+
+    [[maybe_unused]]
+    void junk() noexcept
+    {
+        auto op_data  = get_data(59);
+        auto ref_data = op_data.as_ref();
+        if (ref_data) {
+            auto& data = *ref_data;
+            *data      = 89;
+        }
+        std::println("{}", op_data.deref());
     }
 } // namespace
 
 int main()
 {
     func();
+    junk();
     return 0;
 }

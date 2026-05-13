@@ -96,27 +96,39 @@ public:
     auto valueless_after_move() const noexcept -> bool
     { return m_data_ptr == nullptr; }
 
-    [[nodiscard]]
-    auto operator*(this auto&& self) noexcept -> decltype(auto)
+    auto operator*() noexcept -> T&
     {
-        assert(self);
-        return (*self.m_data_ptr);
+        assert(!valueless_after_move());
+        return *m_data_ptr;
+    }
+
+    auto operator*() const noexcept -> T const&
+    {
+        assert(!valueless_after_move());
+        return *m_data_ptr;
     }
 
     [[nodiscard]]
-    auto operator->(this auto&& self) noexcept -> decltype(auto)
+    auto operator->() noexcept -> T*
     {
-        assert(self);
-        return self.m_data_ptr;
+        assert(!valueless_after_move());
+        return m_data_ptr;
+    }
+
+    [[nodiscard]]
+    auto operator->() const noexcept -> T const*
+    {
+        assert(!valueless_after_move());
+        return m_data_ptr;
     }
 
     [[nodiscard]] auto value(this auto&& self) noexcept -> decltype(auto) { return (*self); }
 
-    [[nodiscard]] auto view(this auto&& self) noexcept { return handle_view{ self.m_data_ptr }; }
+    [[nodiscard]] auto view() noexcept -> handle_view<T> { return handle_view{ m_data_ptr }; }
+    [[nodiscard]] auto view() const noexcept -> handle_view<const T>
+    { return handle_view{ m_data_ptr }; }
 
 private:
-    [[nodiscard]] explicit operator bool() const noexcept { return m_data_ptr != nullptr; }
-
     explicit unique_handle(T* data_ptr) noexcept
         : m_data_ptr(data_ptr)
     {
@@ -267,7 +279,19 @@ public:
         return std::move(m_data);
     }
 
-    [[nodiscard]] auto operator->(this auto&& self) noexcept { return std::addressof(self.m_data); }
+    [[nodiscard]]
+    auto operator->() noexcept -> T*
+    {
+        assert(has_value());
+        return std::addressof(m_data);
+    }
+
+    [[nodiscard]]
+    auto operator->() const noexcept -> T const*
+    {
+        assert(has_value());
+        return std::addressof(m_data);
+    }
 
     [[nodiscard]]
     auto value() & noexcept -> unique_handle<T>&
@@ -310,6 +334,18 @@ public:
         std::destroy_at(m_data.m_data_ptr);
         ::operator delete(m_data.m_data_ptr);
         m_data.m_data_ptr = nullptr;
+    }
+
+    auto as_ref() noexcept -> optional<unique_handle<T>&>
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<unique_handle<T>&>{ m_data };
+    }
+
+    auto as_ref() const noexcept -> optional<const unique_handle<T>&>
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<const unique_handle<T>&>{ m_data };
     }
 
     template <typename... Args>
