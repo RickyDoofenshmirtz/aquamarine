@@ -1,5 +1,6 @@
 #pragma once
 
+#include "utils/traits.hpp"
 #include <cassert>
 #include <exception>
 #include <memory>
@@ -46,6 +47,14 @@ public:
     }
 
     template <typename... Args>
+        requires(only_creatable<T, Args...> && std::is_nothrow_destructible_v<T>)
+    [[nodiscard]]
+    static auto create(Args&&... args) noexcept -> optional
+    {
+        return optional{ T::create(std::forward<Args>(args)...) }; //
+    }
+
+    template <typename... Args>
         requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
     [[nodiscard]]
     static auto force_create(Args&&... args) noexcept -> optional
@@ -63,6 +72,14 @@ public:
     {
         reset();
         return m_data.emplace(std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+        requires(only_creatable<T, Args...> && std::is_nothrow_destructible_v<T>)
+    auto emplace(Args&&... args) noexcept -> T&
+    {
+        reset();
+        return m_data.emplace(T::create(std::forward<Args>(args)...));
     }
 
     template <typename... Args>

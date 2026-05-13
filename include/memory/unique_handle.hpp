@@ -34,9 +34,7 @@ public:
     }
 
     template <typename... Args>
-        requires(
-            !std::is_nothrow_constructible_v<T, Args...> && //
-            creatable<T, Args...> && std::is_nothrow_destructible_v<T>)
+        requires(only_creatable<T, Args...> && std::is_nothrow_destructible_v<T>)
     [[nodiscard]]
     static auto create(Args&&... args) noexcept -> unique_handle
     {
@@ -195,9 +193,7 @@ public:
     }
 
     template <typename... Args>
-        requires(
-            !std::is_nothrow_constructible_v<T, Args...> && creatable<T, Args...> &&
-            std::is_nothrow_destructible_v<T>)
+        requires(only_creatable<T, Args...> && std::is_nothrow_destructible_v<T>)
     [[nodiscard]]
     static auto create(Args&&... args) noexcept -> optional
     {
@@ -328,6 +324,21 @@ public:
             std::destroy_at(data_ptr);
         }
         std::construct_at(data_ptr, std::forward<Args>(args)...);
+        return self.deref();
+    }
+
+    template <typename... Args>
+        requires(only_creatable<T, Args...> && std::is_nothrow_destructible_v<T>)
+    auto emplace(this auto& self, Args&&... args) noexcept -> T&
+    {
+        auto& data_ptr = self.m_data.m_data_ptr;
+        if (self.is_empty()) {
+            data_ptr = static_cast<T*>(::operator new(sizeof(T), std::nothrow));
+            if (data_ptr == nullptr) [[unlikely]] { std::terminate(); }
+        } else {
+            std::destroy_at(data_ptr);
+        }
+        std::construct_at(data_ptr, T::create(std::forward<Args>(args)...));
         return self.deref();
     }
 
