@@ -1,34 +1,32 @@
 #include "memory/unique_handle.hpp"
+#include "utils/optional.hpp"
 
-#include <cstdint>
+#include <optional>
 #include <print>
 
 namespace {
-    struct coordinate
-    {
-        std::int64_t x;
-        std::int64_t y;
 
-        static auto create(std::int64_t x, std::int64_t y) noexcept -> coordinate
-        { return coordinate{ .x = x, .y = y }; }
-    };
+    [[maybe_unused]]
+    auto get_val(int x) noexcept -> optional<int>
+    {
+        if (x == 0) { return std::nullopt; }
+        return optional{ x };
+    }
+
+    auto get_data(int x) noexcept -> optional<unique_handle<int>>
+    {
+        if (x == 0) { return std::nullopt; }
+        auto data = unique_handle<int>::create(x);
+        return optional{ data };
+        return optional<unique_handle<int>>::create(x);
+    }
 
     void func() noexcept
     {
-        using handle_type     = unique_handle<coordinate>;
-        using opt_handle_type = optional<unique_handle<coordinate>>;
-        static_assert(sizeof(handle_type) == sizeof(opt_handle_type));
-
-        auto c1 = opt_handle_type::empty();
-        for (auto& val : c1) {
-            auto& [x, y] = *val;
-            std::println("{}, {}", x, y);
-        }
-
-        c1.emplace(5, 6);
-        for (auto& val : c1) {
-            auto& [x, y] = *val;
-            std::println("{}, {}", x, y);
+        auto op_data = get_data(5);
+        for (auto& data : op_data) {
+            auto val = *data;
+            std::println("{}", val);
         }
     }
 }

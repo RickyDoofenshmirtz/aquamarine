@@ -4,6 +4,7 @@
 #include "utils/optional.hpp"
 #include "utils/traits.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <exception>
 #include <memory>
@@ -173,6 +174,11 @@ public:
     {
     }
 
+    explicit optional(unique_handle<T>& data) noexcept
+        : m_data(std::move(data))
+    {
+    }
+
     explicit optional(unique_handle<T>&& data) noexcept
         : m_data(std::move(data))
     {
@@ -226,7 +232,7 @@ public:
 
     [[nodiscard]] auto has_value() const noexcept -> bool { return m_data.m_data_ptr != nullptr; }
 
-    [[nodiscard]] auto is_empty() const noexcept -> bool { return !has_value(); }
+    [[nodiscard]] auto is_empty() const noexcept -> bool { return m_data.m_data_ptr == nullptr; }
 
     [[nodiscard]] auto begin() noexcept -> iterator
     { return (has_value()) ? std::addressof(m_data) : nullptr; }
@@ -265,7 +271,7 @@ public:
         return std::move(m_data);
     }
 
-    [[nodiscard]] auto operator->(this auto&& self) noexcept { return self.m_data.m_data_ptr; }
+    [[nodiscard]] auto operator->(this auto&& self) noexcept { return std::addressof(self.m_data); }
 
     [[nodiscard]]
     auto value() & noexcept -> unique_handle<T>&
@@ -353,3 +359,9 @@ private:
 
     unique_handle<T> m_data;
 };
+
+template <typename T>
+optional(unique_handle<T>&) -> optional<unique_handle<T>>;
+
+template <typename T>
+optional(unique_handle<T>&&) -> optional<unique_handle<T>>;

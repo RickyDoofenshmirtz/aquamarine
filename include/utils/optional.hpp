@@ -11,9 +11,9 @@ template <typename T>
 class optional
 {
 public:
-    using value_type     = std::optional<T>::value_type;
-    using iterator       = std::optional<T>::iterator;
-    using const_iterator = std::optional<T>::const_iterator;
+    using value_type = std::optional<T>::value_type;
+    using iterator   = std::optional<T>::iterator;
+    // using const_iterator = std::optional<T>::const_iterator;
 
     explicit optional() noexcept
         : m_data(std::nullopt)
@@ -22,6 +22,16 @@ public:
 
     optional([[maybe_unused]] std::nullopt_t _) noexcept
         : m_data(std::nullopt)
+    {
+    }
+
+    explicit optional(T& elm) noexcept
+        : m_data(std::move(elm))
+    {
+    }
+
+    explicit optional(T&& elm) noexcept
+        : m_data(std::move(elm))
     {
     }
 
@@ -72,6 +82,8 @@ public:
     [[nodiscard]] explicit operator bool() const noexcept { return m_data.has_value(); }
 
     [[nodiscard]] auto has_value() const noexcept -> bool { return m_data.has_value(); }
+
+    [[nodiscard]] auto is_empty() const noexcept -> bool { return !m_data.has_value(); }
 
     [[nodiscard]]
     auto operator*() & noexcept -> T&
@@ -166,19 +178,7 @@ private:
 };
 
 template <typename T>
-inline auto opt_ref(T& ref) noexcept -> optional<T&>
-{
-    return optional<T&>::create(ref); //
-}
+optional(T&) -> optional<T>;
 
 template <typename T>
-inline auto some(T&& val) noexcept -> optional<T>
-{
-    return optional<T>::create(std::forward<T>(val)); //
-}
-
-template <typename T>
-inline auto nullopt() noexcept -> optional<T>
-{
-    return optional<T>::empty(); //
-}
+optional(T&&) -> optional<T>;
