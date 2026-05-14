@@ -230,6 +230,13 @@ public:
     {
     }
 
+    template <typename U>
+        requires(std::is_nothrow_constructible_v<T&, U&>)
+    explicit(!std::is_convertible_v<U&, T&>) optional(const optional<U&>& data) noexcept
+        : m_data(data.value())
+    {
+    }
+
     optional(T&& data) noexcept = delete;
 
     auto emplace(T& src) noexcept -> T& { return m_data.emplace(src); }

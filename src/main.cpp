@@ -54,16 +54,17 @@ namespace {
         if (en) { std::println("en = {}", ref_en->value()); }
     }
 
+    void print_value(optional<const unique_handle<int>&> op_hand) noexcept
+    {
+        if (op_hand) { std::println("{}", op_hand->value()); }
+    }
+
     [[maybe_unused]]
     void junk() noexcept
     {
-        auto op_data  = get_data(59);
-        auto ref_data = op_data.as_ref();
-        if (ref_data) {
-            auto& data = *ref_data;
-            *data      = 89;
-        }
-        std::println("{}", op_data.deref());
+        const auto op_data = get_data(59);
+        auto ref_data      = op_data.as_ref();
+        print_value(ref_data);
     }
 } // namespace
 
