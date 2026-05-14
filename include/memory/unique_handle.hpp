@@ -336,17 +336,20 @@ public:
         m_data.m_data_ptr = nullptr;
     }
 
-    auto as_ref() noexcept -> optional<unique_handle<T>&>
+    auto as_ref() & noexcept -> optional<unique_handle<T>&>
     {
         if (is_empty()) { return std::nullopt; }
         return optional<unique_handle<T>&>{ m_data };
     }
 
-    auto as_ref() const noexcept -> optional<const unique_handle<T>&>
+    auto as_ref() const& noexcept -> optional<const unique_handle<T>&>
     {
         if (is_empty()) { return std::nullopt; }
         return optional<const unique_handle<T>&>{ m_data };
     }
+
+    auto as_ref() &&      = delete;
+    auto as_ref() const&& = delete;
 
     template <typename... Args>
         requires(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)

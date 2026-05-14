@@ -178,18 +178,21 @@ public:
     [[nodiscard]] auto end(this auto&& self) noexcept { return self.m_data.end(); }
 
     [[nodiscard]]
-    auto as_ref() noexcept -> optional<T&>
+    auto as_ref() & noexcept -> optional<T&>
     {
         if (!has_value()) { return std::nullopt; }
         return optional<T&>{ *m_data };
     }
 
     [[nodiscard]]
-    auto as_ref() const noexcept -> optional<const T&>
+    auto as_ref() const& noexcept -> optional<const T&>
     {
         if (!has_value()) { return std::nullopt; }
         return optional<const T&>{ *m_data };
     }
+
+    auto as_ref() &&      = delete;
+    auto as_ref() const&& = delete;
 
 private:
     template <typename... Args>
