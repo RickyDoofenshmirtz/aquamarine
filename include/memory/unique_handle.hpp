@@ -96,12 +96,14 @@ public:
     auto valueless_after_move() const noexcept -> bool
     { return m_data_ptr == nullptr; }
 
+    [[nodiscard]]
     auto operator*() noexcept -> T&
     {
         assert(!valueless_after_move());
         return *m_data_ptr;
     }
 
+    [[nodiscard]]
     auto operator*() const noexcept -> T const&
     {
         assert(!valueless_after_move());
@@ -336,12 +338,14 @@ public:
         m_data.m_data_ptr = nullptr;
     }
 
+    [[nodiscard]]
     auto as_ref() & noexcept -> optional<unique_handle<T>&>
     {
         if (is_empty()) { return std::nullopt; }
         return optional<unique_handle<T>&>{ m_data };
     }
 
+    [[nodiscard]]
     auto as_ref() const& noexcept -> optional<const unique_handle<T>&>
     {
         if (is_empty()) { return std::nullopt; }
