@@ -126,6 +126,15 @@ public:
 
     [[nodiscard]] auto value(this auto&& self) noexcept -> decltype(auto) { return (*self); }
 
+    auto as_opt_ref() & noexcept -> optional<unique_handle<T>&>
+    { return optional<unique_handle<T>&>{ *this }; }
+
+    auto as_opt_ref() const& noexcept -> optional<unique_handle<T> const&>
+    { return optional<unique_handle<T> const&>{ *this }; }
+
+    auto as_opt_ref() &&      = delete;
+    auto as_opt_ref() const&& = delete;
+
     [[nodiscard]] auto view() noexcept -> handle_view<T> { return handle_view{ m_data_ptr }; }
     [[nodiscard]] auto view() const noexcept -> handle_view<const T>
     { return handle_view{ m_data_ptr }; }

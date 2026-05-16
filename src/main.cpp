@@ -80,12 +80,13 @@ namespace {
         auto opt_data = get_data();
         auto data     = opt_data.as_deref();
         std::println("{}", data);
+        opt_data = nullopt;
     }
 } // namespace
 
 int main()
 {
-    // func();
+    func();
     junk();
     return 0;
 }

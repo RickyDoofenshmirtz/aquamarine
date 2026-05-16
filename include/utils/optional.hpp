@@ -9,6 +9,8 @@
 #include <type_traits>
 #include <utility>
 
+constexpr auto nullopt = std::nullopt;
+
 template <typename T>
 class optional
 {
@@ -34,6 +36,11 @@ public:
 
     explicit optional(T&& elm) noexcept
         : m_data(std::move(elm))
+    {
+    }
+
+    explicit optional(const T& elm) noexcept
+        : m_data(elm)
     {
     }
 
@@ -306,6 +313,10 @@ private:
 template <typename T>
 optional(T&) -> optional<T&>;
 
-template <typename T>
-auto as_opt(T& data) -> optional<T&>
-{ return optional<T&>{ data }; }
+namespace opt {
+    template <typename T>
+    auto as_ref(T& data) noexcept -> optional<T&>
+    {
+        return optional<T&>{ data }; //
+    }
+}
