@@ -194,6 +194,14 @@ public:
     auto as_ref() &&      = delete;
     auto as_ref() const&& = delete;
 
+    auto eject() noexcept -> optional<T>
+    {
+        if (is_empty()) { return std::nullopt; }
+        auto data = optional{ std::move(*m_data) };
+        m_data.reset();
+        return data;
+    }
+
 private:
     template <typename... Args>
         requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)

@@ -393,6 +393,13 @@ public:
     auto as_deref() &&      = delete;
     auto as_deref() const&& = delete;
 
+    auto eject() noexcept -> optional<unique_handle<T>>
+    {
+        if (is_empty()) { return std::nullopt; }
+        T* data_ptr = std::exchange(m_data.m_data_ptr, nullptr);
+        return optional{ data_ptr };
+    }
+
     template <typename... Args>
         requires(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
     auto emplace(this auto& self, Args&&... args) noexcept -> T&
