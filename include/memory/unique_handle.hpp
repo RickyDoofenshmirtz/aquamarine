@@ -174,7 +174,7 @@ class optional<unique_handle<T>>
 public:
     using value_type     = unique_handle<T>;
     using iterator       = unique_handle<T>*;
-    using const_iterator = const unique_handle<T>*;
+    using const_iterator = unique_handle<T> const*;
 
     explicit optional() noexcept
         : m_data(nullptr)
@@ -346,10 +346,10 @@ public:
     }
 
     [[nodiscard]]
-    auto as_ref() const& noexcept -> optional<const unique_handle<T>&>
+    auto as_ref() const& noexcept -> optional<unique_handle<T> const&>
     {
         if (is_empty()) { return std::nullopt; }
-        return optional<const unique_handle<T>&>{ m_data };
+        return optional<unique_handle<T> const&>{ m_data };
     }
 
     auto as_ref() &&      = delete;

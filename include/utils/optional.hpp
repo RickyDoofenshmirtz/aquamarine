@@ -185,10 +185,10 @@ public:
     }
 
     [[nodiscard]]
-    auto as_ref() const& noexcept -> optional<const T&>
+    auto as_ref() const& noexcept -> optional<T const&>
     {
         if (!has_value()) { return std::nullopt; }
-        return optional<const T&>{ *m_data };
+        return optional<T const&>{ *m_data };
     }
 
     auto as_ref() &&      = delete;
