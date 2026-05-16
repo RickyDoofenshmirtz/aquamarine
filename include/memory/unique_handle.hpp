@@ -126,9 +126,11 @@ public:
 
     [[nodiscard]] auto value(this auto&& self) noexcept -> decltype(auto) { return (*self); }
 
+    [[nodiscard]]
     auto as_opt_ref() & noexcept -> optional<unique_handle<T>&>
     { return optional<unique_handle<T>&>{ *this }; }
 
+    [[nodiscard]]
     auto as_opt_ref() const& noexcept -> optional<unique_handle<T> const&>
     { return optional<unique_handle<T> const&>{ *this }; }
 

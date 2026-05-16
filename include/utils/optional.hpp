@@ -315,6 +315,7 @@ optional(T&) -> optional<T&>;
 
 namespace opt {
     template <typename T>
+    [[nodiscard]]
     auto as_ref(T& data) noexcept -> optional<T&>
     {
         return optional<T&>{ data }; //
