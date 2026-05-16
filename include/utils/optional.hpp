@@ -299,9 +299,5 @@ template <typename T>
 optional(T&) -> optional<T&>;
 
 template <typename T>
-auto as_opt(T& data) noexcept -> optional<T>
-{ return optional{ std::move(data) }; }
-
-template <typename T>
-auto as_opt_ref(T& data) -> optional<T&>
+auto as_opt(T& data) -> optional<T&>
 { return optional<T&>{ data }; }

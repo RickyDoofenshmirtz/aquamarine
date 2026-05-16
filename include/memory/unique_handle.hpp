@@ -324,10 +324,31 @@ public:
     }
 
     [[nodiscard]]
-    auto deref(this auto&& self) noexcept -> decltype(auto)
+    auto deref() & noexcept -> T&
     {
-        assert(self.has_value());
-        return (*self.m_data);
+        assert(has_value());
+        return m_data.value();
+    }
+
+    [[nodiscard]]
+    auto deref() const& noexcept -> T const&
+    {
+        assert(has_value());
+        return m_data.value();
+    }
+
+    [[nodiscard]]
+    auto deref() && noexcept -> T&&
+    {
+        assert(has_value());
+        return std::move(m_data.value());
+    }
+
+    [[nodiscard]]
+    auto deref() const&& noexcept -> T const&&
+    {
+        assert(has_value());
+        return std::move(m_data.value());
     }
 
     void reset() noexcept
@@ -354,6 +375,23 @@ public:
 
     auto as_ref() &&      = delete;
     auto as_ref() const&& = delete;
+
+    [[nodiscard]]
+    auto as_deref() & noexcept -> optional<T&>
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<T&>{ m_data.value() };
+    }
+
+    [[nodiscard]]
+    auto as_deref() const& noexcept -> optional<T const&>
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<T const&>{ m_data.value() };
+    }
+
+    auto as_deref() &&      = delete;
+    auto as_deref() const&& = delete;
 
     template <typename... Args>
         requires(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)

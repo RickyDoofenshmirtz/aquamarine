@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <print>
+#include <string>
 
 namespace {
     class entity
@@ -32,13 +33,26 @@ namespace {
         return res;
     }
 
+    [[maybe_unused]]
+    auto get_data() -> optional<unique_handle<std::string>>
+    { return optional<unique_handle<std::string>>::force_create("hello"); }
+
+    [[maybe_unused]]
     auto get_data(int x) noexcept -> optional<unique_handle<int>>
     {
         if (x == 0) { return std::nullopt; }
         auto data = unique_handle<int>::create(x);
         return optional{ data };
         return optional<unique_handle<int>>::create(x);
-        return as_opt(data);
+    }
+
+    [[maybe_unused]]
+    auto pass()
+    {
+        auto data   = get_data();
+        auto& value = data.deref();
+        std::println("value = {}", value);
+        return data.deref();
     }
 
     [[maybe_unused]]
@@ -54,6 +68,7 @@ namespace {
         if (en) { std::println("en = {}", ref_en->value()); }
     }
 
+    [[maybe_unused]]
     void print_value(optional<const unique_handle<int>&> op_hand) noexcept
     {
         if (op_hand) { std::println("{}", op_hand->value()); }
@@ -62,15 +77,15 @@ namespace {
     [[maybe_unused]]
     void junk() noexcept
     {
-        const auto op_data = get_data(59);
-        auto ref_data      = op_data.as_ref();
-        print_value(ref_data);
+        auto opt_data = get_data();
+        auto data     = opt_data.as_deref();
+        std::println("{}", data);
     }
 } // namespace
 
 int main()
 {
-    func();
+    // func();
     junk();
     return 0;
 }
