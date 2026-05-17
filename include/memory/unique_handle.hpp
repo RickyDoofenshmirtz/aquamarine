@@ -1,6 +1,5 @@
 #pragma once
 
-#include "handle_view.hpp"
 #include "utils/optional.hpp"
 #include "utils/traits.hpp"
 
@@ -136,10 +135,6 @@ public:
 
     auto as_opt_ref() &&      = delete;
     auto as_opt_ref() const&& = delete;
-
-    [[nodiscard]] auto view() noexcept -> handle_view<T> { return handle_view{ m_data_ptr }; }
-    [[nodiscard]] auto view() const noexcept -> handle_view<const T>
-    { return handle_view{ m_data_ptr }; }
 
 private:
     explicit unique_handle(T* data_ptr) noexcept

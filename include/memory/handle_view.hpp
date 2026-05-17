@@ -6,7 +6,7 @@
 #include <utility>
 
 template <typename T>
-class handle_view
+class [[deprecated("use optional<T&> instead")]] handle_view
 {
 public:
     using value_type = T;
