@@ -248,14 +248,14 @@ public:
     {
     }
 
+    optional(T&& data) noexcept = delete;
+
     template <typename U>
         requires(std::is_nothrow_constructible_v<T&, U&>)
     explicit(!std::is_convertible_v<U&, T&>) optional(const optional<U&>& data) noexcept
         : m_data(data.value())
     {
     }
-
-    optional(T&& data) noexcept = delete;
 
     auto emplace(T& src) noexcept -> T& { return m_data.emplace(src); }
 
@@ -300,10 +300,10 @@ public:
     }
 
     [[nodiscard]]
-    auto value(this auto&& self) noexcept -> T&
+    auto value(this auto&& self) noexcept -> decltype(auto)
     {
         assert(self);
-        return *self.m_data;
+        return (*self);
     }
 
 private:
