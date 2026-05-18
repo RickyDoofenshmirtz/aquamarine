@@ -110,6 +110,10 @@ public:
 
     [[nodiscard]] auto is_empty() const noexcept -> bool { return !m_data.has_value(); }
 
+    [[nodiscard]] auto begin(this auto&& self) noexcept { return self.m_data.begin(); }
+
+    [[nodiscard]] auto end(this auto&& self) noexcept { return self.m_data.end(); }
+
     [[nodiscard]]
     auto operator*() & noexcept -> T&
     {
@@ -180,26 +184,39 @@ public:
         return std::move(*m_data);
     }
 
-    [[nodiscard]] auto begin(this auto&& self) noexcept { return self.m_data.begin(); }
-
-    [[nodiscard]] auto end(this auto&& self) noexcept { return self.m_data.end(); }
-
     [[nodiscard]]
     auto as_ref() & noexcept -> optional<T&>
     {
-        if (!has_value()) { return std::nullopt; }
+        if (is_empty()) { return std::nullopt; }
         return optional<T&>{ *m_data };
     }
 
     [[nodiscard]]
     auto as_ref() const& noexcept -> optional<T const&>
     {
-        if (!has_value()) { return std::nullopt; }
+        if (is_empty()) { return std::nullopt; }
         return optional<T const&>{ *m_data };
     }
 
     auto as_ref() &&      = delete;
     auto as_ref() const&& = delete;
+
+    auto as_deref() & noexcept -> optional<typename T::value_type&>
+        requires(dereferenceable<T>)
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<typename T::value_type&>{ **m_data };
+    }
+
+    auto as_deref() const& noexcept -> optional<typename T::value_type const&>
+        requires(dereferenceable<T>)
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<typename T::value_type const&>{ **m_data };
+    }
+
+    auto as_deref() &&      = delete;
+    auto as_deref() const&& = delete;
 
     auto eject() noexcept -> optional<T>
     {
