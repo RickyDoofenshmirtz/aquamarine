@@ -209,7 +209,10 @@ public:
     [[nodiscard]]
     static auto create(Args&&... args) noexcept -> optional
     {
-        return force_create(std::forward<Args>(args)...); //
+        void* ptr = ::operator new(sizeof(T), std::nothrow);
+        if (ptr == nullptr) [[unlikely]] { std::terminate(); }
+        T* data_ptr = new(ptr) T(std::forward<Args>(args)...);
+        return optional{ data_ptr };
     }
 
     template <typename... Args>
@@ -219,13 +222,8 @@ public:
     {
         void* ptr = ::operator new(sizeof(T), std::nothrow);
         if (ptr == nullptr) [[unlikely]] { std::terminate(); }
-        try {
-            T* data_ptr = new(ptr) T(T::create(std::forward<Args>(args)...));
-            return optional{ data_ptr };
-        } catch (...) {
-            ::operator delete(ptr);
-            std::terminate();
-        }
+        T* data_ptr = new(ptr) T(T::create(std::forward<Args>(args)...));
+        return optional{ data_ptr };
     }
 
     template <typename... Args>
@@ -404,6 +402,13 @@ public:
         if (is_empty()) { return std::nullopt; }
         T* data_ptr = std::exchange(m_data.m_data_ptr, nullptr);
         return optional{ data_ptr };
+    }
+
+    auto eject_deref() noexcept -> optional<T>
+    {
+        auto elm = eject();
+        if (!elm) { return std::nullopt; }
+        return optional<T>{ std::move(elm.deref()) };
     }
 
     template <typename... Args>
