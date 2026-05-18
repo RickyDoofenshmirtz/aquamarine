@@ -201,18 +201,20 @@ public:
     auto as_ref() &&      = delete;
     auto as_ref() const&& = delete;
 
-    auto as_deref() & noexcept -> optional<typename T::value_type&>
+    auto as_deref() & noexcept
         requires(dereferenceable<T>)
     {
-        if (is_empty()) { return std::nullopt; }
-        return optional<typename T::value_type&>{ **m_data };
+        using U = T::value_type&;
+        if (is_empty()) { return optional<U>{}; }
+        return optional<U>{ **m_data };
     }
 
-    auto as_deref() const& noexcept -> optional<typename T::value_type const&>
+    auto as_deref() const& noexcept
         requires(dereferenceable<T>)
     {
-        if (is_empty()) { return std::nullopt; }
-        return optional<typename T::value_type const&>{ **m_data };
+        using U = T::value_type const&;
+        if (is_empty()) { return optional<U>{}; }
+        return optional<U>{ **m_data };
     }
 
     auto as_deref() &&      = delete;
