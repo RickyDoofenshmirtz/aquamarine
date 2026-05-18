@@ -327,9 +327,6 @@ private:
     std::optional<T&> m_data;
 };
 
-template <typename T>
-optional(T&) -> optional<T&>;
-
 namespace opt {
     template <typename T>
     [[nodiscard]]
