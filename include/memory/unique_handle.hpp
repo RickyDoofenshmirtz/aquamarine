@@ -96,17 +96,31 @@ public:
     { return m_data_ptr == nullptr; }
 
     [[nodiscard]]
-    auto operator*() noexcept -> T&
+    auto operator*() & noexcept -> T&
     {
         assert(!valueless_after_move());
         return *m_data_ptr;
     }
 
     [[nodiscard]]
-    auto operator*() const noexcept -> T const&
+    auto operator*() const& noexcept -> T const&
     {
         assert(!valueless_after_move());
         return *m_data_ptr;
+    }
+
+    [[nodiscard]]
+    auto operator*() && noexcept -> T&&
+    {
+        assert(!valueless_after_move());
+        return std::move(*m_data_ptr);
+    }
+
+    [[nodiscard]]
+    auto operator*() const&& noexcept -> T const&&
+    {
+        assert(!valueless_after_move());
+        return std::move(*m_data_ptr);
     }
 
     [[nodiscard]]
@@ -123,7 +137,11 @@ public:
         return m_data_ptr;
     }
 
-    [[nodiscard]] auto value(this auto&& self) noexcept -> decltype(auto) { return (*self); }
+    [[nodiscard]] auto value() & noexcept -> T& { return **this; }
+    [[nodiscard]] auto value() const& noexcept -> T const& { return **this; }
+
+    [[nodiscard]] auto value() && noexcept -> T&& { return std::move(**this); }
+    [[nodiscard]] auto value() const&& noexcept -> T const&& { return std::move(**this); }
 
     [[nodiscard]]
     auto as_opt_ref() & noexcept -> optional<unique_handle<T>&>
@@ -248,10 +266,12 @@ public:
 
     [[nodiscard]] auto is_empty() const noexcept -> bool { return m_data.m_data_ptr == nullptr; }
 
-    [[nodiscard]] auto begin() noexcept -> iterator
+    [[nodiscard]]
+    auto begin() noexcept -> iterator
     { return (has_value()) ? std::addressof(m_data) : nullptr; }
 
-    [[nodiscard]] auto begin() const noexcept -> const_iterator
+    [[nodiscard]]
+    auto begin() const noexcept -> const_iterator
     { return (has_value()) ? std::addressof(m_data) : nullptr; }
 
     [[nodiscard]] auto end() noexcept -> iterator { return begin() + has_value(); }
