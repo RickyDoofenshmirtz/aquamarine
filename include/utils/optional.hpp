@@ -2,8 +2,10 @@
 
 #include "utils/traits.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <exception>
+#include <iterator>
 #include <memory>
 #include <optional>
 #include <type_traits>
@@ -30,16 +32,19 @@ public:
     }
 
     explicit optional(T& elm) noexcept
+        requires(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_destructible_v<T>)
         : m_data(std::move(elm))
     {
     }
 
     explicit optional(T&& elm) noexcept
+        requires(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_destructible_v<T>)
         : m_data(std::move(elm))
     {
     }
 
     explicit optional(const T& elm) noexcept
+        requires(std::is_nothrow_copy_constructible_v<T> && std::is_nothrow_destructible_v<T>)
         : m_data(elm)
     {
     }
@@ -202,19 +207,15 @@ public:
     auto as_ref() const&& = delete;
 
     auto as_deref() & noexcept
-        requires(dereferenceable<T>)
     {
-        using U = T::value_type&;
-        if (is_empty()) { return optional<U>{}; }
-        return optional<U>{ **m_data };
+        if (is_empty()) { return optional<std::iter_reference_t<T>>{}; }
+        return optional<std::iter_reference_t<T>>{ **m_data };
     }
 
     auto as_deref() const& noexcept
-        requires(dereferenceable<T>)
     {
-        using U = T::value_type const&;
-        if (is_empty()) { return optional<U>{}; }
-        return optional<U>{ **m_data };
+        if (is_empty()) { return optional<std::iter_reference_t<const T>>{}; }
+        return optional<std::iter_reference_t<const T>>{ **m_data };
     }
 
     auto as_deref() &&      = delete;
@@ -323,6 +324,18 @@ public:
     {
         assert(self);
         return (*self);
+    }
+
+    auto as_deref() noexcept
+    {
+        if (is_empty()) { return optional<std::iter_reference_t<T>>{}; }
+        return optional<std::iter_reference_t<T>>{ **m_data };
+    }
+
+    auto as_deref() const noexcept
+    {
+        if (is_empty()) { return optional<std::iter_reference_t<const T>>{}; }
+        return optional<std::iter_reference_t<const T>>{ **m_data };
     }
 
 private:
