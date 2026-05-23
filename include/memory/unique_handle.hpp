@@ -143,17 +143,6 @@ public:
     [[nodiscard]] auto value() && noexcept -> T&& { return std::move(**this); }
     [[nodiscard]] auto value() const&& noexcept -> T const&& { return std::move(**this); }
 
-    [[nodiscard]]
-    auto as_opt_ref() & noexcept -> optional<unique_handle<T>&>
-    { return optional<unique_handle<T>&>{ *this }; }
-
-    [[nodiscard]]
-    auto as_opt_ref() const& noexcept -> optional<unique_handle<T> const&>
-    { return optional<unique_handle<T> const&>{ *this }; }
-
-    auto as_opt_ref() &&      = delete;
-    auto as_opt_ref() const&& = delete;
-
 private:
     explicit unique_handle(T* data_ptr) noexcept
         : m_data_ptr(data_ptr)
