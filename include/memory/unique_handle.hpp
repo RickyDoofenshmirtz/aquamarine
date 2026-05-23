@@ -1,9 +1,9 @@
 #pragma once
 
-#include "handle_view.hpp"
 #include "utils/optional.hpp"
 #include "utils/traits.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <exception>
 #include <memory>
@@ -33,9 +33,7 @@ public:
     }
 
     template <typename... Args>
-        requires(
-            !std::is_nothrow_constructible_v<T, Args...> && //
-            creatable<T, Args...> && std::is_nothrow_destructible_v<T>)
+        requires(only_creatable<T, Args...> && std::is_nothrow_destructible_v<T>)
     [[nodiscard]]
     static auto create(Args&&... args) noexcept -> unique_handle
     {
@@ -94,30 +92,71 @@ public:
     [[nodiscard]] auto ptr() const noexcept -> T const* { return m_data_ptr; }
 
     [[nodiscard]]
-    auto valueless_after_move() const noexcept -> bool
+    auto null_after_move() const noexcept -> bool
     { return m_data_ptr == nullptr; }
 
     [[nodiscard]]
-    auto operator*(this auto&& self) noexcept -> decltype(auto)
+    auto operator*() & noexcept -> T&
     {
-        assert(self);
-        return (*self.m_data_ptr);
+        assert(!null_after_move());
+        return *m_data_ptr;
     }
 
     [[nodiscard]]
-    auto operator->(this auto&& self) noexcept -> decltype(auto)
+    auto operator*() const& noexcept -> T const&
     {
-        assert(self);
-        return self.m_data_ptr;
+        assert(!null_after_move());
+        return *m_data_ptr;
     }
 
-    [[nodiscard]] auto value(this auto&& self) noexcept -> decltype(auto) { return (*self); }
+    [[nodiscard]]
+    auto operator*() && noexcept -> T&&
+    {
+        assert(!null_after_move());
+        return std::move(*m_data_ptr);
+    }
 
-    [[nodiscard]] auto view(this auto&& self) noexcept { return handle_view{ self.m_data_ptr }; }
+    [[nodiscard]]
+    auto operator*() const&& noexcept -> T const&&
+    {
+        assert(!null_after_move());
+        return std::move(*m_data_ptr);
+    }
+
+    [[nodiscard]]
+    auto operator->() & noexcept -> T*
+    {
+        assert(!null_after_move());
+        return m_data_ptr;
+    }
+
+    [[nodiscard]]
+    auto operator->() const& noexcept -> T const*
+    {
+        assert(!null_after_move());
+        return m_data_ptr;
+    }
+
+    auto operator->() && noexcept      = delete;
+    auto operator->() const&& noexcept = delete;
+
+    [[nodiscard]] auto value() & noexcept -> T& { return **this; }
+    [[nodiscard]] auto value() const& noexcept -> T const& { return **this; }
+
+    [[nodiscard]] auto value() && noexcept -> T&& { return std::move(**this); }
+    [[nodiscard]] auto value() const&& noexcept -> T const&& { return std::move(**this); }
+
+    auto eject() noexcept -> T
+    {
+        assert(!null_after_move());
+        auto data = std::move(*m_data_ptr);
+        std::destroy_at(m_data_ptr);
+        ::operator delete(m_data_ptr);
+        m_data_ptr = nullptr;
+        return data;
+    }
 
 private:
-    [[nodiscard]] explicit operator bool() const noexcept { return m_data_ptr != nullptr; }
-
     explicit unique_handle(T* data_ptr) noexcept
         : m_data_ptr(data_ptr)
     {
@@ -161,7 +200,7 @@ class optional<unique_handle<T>>
 public:
     using value_type     = unique_handle<T>;
     using iterator       = unique_handle<T>*;
-    using const_iterator = const unique_handle<T>*;
+    using const_iterator = unique_handle<T> const*;
 
     explicit optional() noexcept
         : m_data(nullptr)
@@ -170,6 +209,11 @@ public:
 
     optional([[maybe_unused]] std::nullopt_t _) noexcept
         : m_data(nullptr)
+    {
+    }
+
+    explicit optional(unique_handle<T>& data) noexcept
+        : m_data(std::move(data))
     {
     }
 
@@ -185,25 +229,21 @@ public:
     [[nodiscard]]
     static auto create(Args&&... args) noexcept -> optional
     {
-        return force_create(std::forward<Args>(args)...); //
+        void* ptr = ::operator new(sizeof(T), std::nothrow);
+        if (ptr == nullptr) [[unlikely]] { std::terminate(); }
+        T* data_ptr = new(ptr) T(std::forward<Args>(args)...);
+        return optional{ data_ptr };
     }
 
     template <typename... Args>
-        requires(
-            !std::is_nothrow_constructible_v<T, Args...> && creatable<T, Args...> &&
-            std::is_nothrow_destructible_v<T>)
+        requires(only_creatable<T, Args...> && std::is_nothrow_destructible_v<T>)
     [[nodiscard]]
     static auto create(Args&&... args) noexcept -> optional
     {
         void* ptr = ::operator new(sizeof(T), std::nothrow);
         if (ptr == nullptr) [[unlikely]] { std::terminate(); }
-        try {
-            T* data_ptr = new(ptr) T(T::create(std::forward<Args>(args)...));
-            return optional{ data_ptr };
-        } catch (...) {
-            ::operator delete(ptr);
-            std::terminate();
-        }
+        T* data_ptr = new(ptr) T(T::create(std::forward<Args>(args)...));
+        return optional{ data_ptr };
     }
 
     template <typename... Args>
@@ -226,12 +266,14 @@ public:
 
     [[nodiscard]] auto has_value() const noexcept -> bool { return m_data.m_data_ptr != nullptr; }
 
-    [[nodiscard]] auto is_empty() const noexcept -> bool { return !has_value(); }
+    [[nodiscard]] auto is_empty() const noexcept -> bool { return m_data.m_data_ptr == nullptr; }
 
-    [[nodiscard]] auto begin() noexcept -> iterator
+    [[nodiscard]]
+    auto begin() noexcept -> iterator
     { return (has_value()) ? std::addressof(m_data) : nullptr; }
 
-    [[nodiscard]] auto begin() const noexcept -> const_iterator
+    [[nodiscard]]
+    auto begin() const noexcept -> const_iterator
     { return (has_value()) ? std::addressof(m_data) : nullptr; }
 
     [[nodiscard]] auto end() noexcept -> iterator { return begin() + has_value(); }
@@ -265,7 +307,22 @@ public:
         return std::move(m_data);
     }
 
-    [[nodiscard]] auto operator->(this auto&& self) noexcept { return self.m_data.m_data_ptr; }
+    [[nodiscard]]
+    auto operator->() & noexcept -> unique_handle<T>*
+    {
+        assert(has_value());
+        return std::addressof(m_data);
+    }
+
+    [[nodiscard]]
+    auto operator->() const& noexcept -> unique_handle<T> const*
+    {
+        assert(has_value());
+        return std::addressof(m_data);
+    }
+
+    auto operator->() && noexcept      = delete;
+    auto operator->() const&& noexcept = delete;
 
     [[nodiscard]]
     auto value() & noexcept -> unique_handle<T>&
@@ -296,10 +353,31 @@ public:
     }
 
     [[nodiscard]]
-    auto deref(this auto&& self) noexcept -> decltype(auto)
+    auto deref() & noexcept -> T&
     {
-        assert(self.has_value());
-        return (*self.m_data);
+        assert(has_value());
+        return m_data.value();
+    }
+
+    [[nodiscard]]
+    auto deref() const& noexcept -> T const&
+    {
+        assert(has_value());
+        return m_data.value();
+    }
+
+    [[nodiscard]]
+    auto deref() && noexcept -> T&&
+    {
+        assert(has_value());
+        return std::move(m_data.value());
+    }
+
+    [[nodiscard]]
+    auto deref() const&& noexcept -> T const&&
+    {
+        assert(has_value());
+        return std::move(m_data.value());
     }
 
     void reset() noexcept
@@ -308,6 +386,53 @@ public:
         std::destroy_at(m_data.m_data_ptr);
         ::operator delete(m_data.m_data_ptr);
         m_data.m_data_ptr = nullptr;
+    }
+
+    [[nodiscard]]
+    auto as_ref() & noexcept -> optional<unique_handle<T>&>
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<unique_handle<T>&>{ m_data };
+    }
+
+    [[nodiscard]]
+    auto as_ref() const& noexcept -> optional<unique_handle<T> const&>
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<unique_handle<T> const&>{ m_data };
+    }
+
+    auto as_ref() &&      = delete;
+    auto as_ref() const&& = delete;
+
+    [[nodiscard]]
+    auto as_deref() & noexcept -> optional<T&>
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<T&>{ m_data.value() };
+    }
+
+    [[nodiscard]]
+    auto as_deref() const& noexcept -> optional<T const&>
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<T const&>{ m_data.value() };
+    }
+
+    auto as_deref() &&      = delete;
+    auto as_deref() const&& = delete;
+
+    auto eject() noexcept -> optional<unique_handle<T>>
+    {
+        if (is_empty()) { return std::nullopt; }
+        T* data_ptr = std::exchange(m_data.m_data_ptr, nullptr);
+        return optional{ data_ptr };
+    }
+
+    auto eject_deref() noexcept -> optional<T>
+    {
+        if (is_empty()) { return std::nullopt; }
+        return optional<T>{ m_data.eject() };
     }
 
     template <typename... Args>
@@ -322,6 +447,21 @@ public:
             std::destroy_at(data_ptr);
         }
         std::construct_at(data_ptr, std::forward<Args>(args)...);
+        return self.deref();
+    }
+
+    template <typename... Args>
+        requires(only_creatable<T, Args...> && std::is_nothrow_destructible_v<T>)
+    auto emplace(this auto& self, Args&&... args) noexcept -> T&
+    {
+        auto& data_ptr = self.m_data.m_data_ptr;
+        if (self.is_empty()) {
+            data_ptr = static_cast<T*>(::operator new(sizeof(T), std::nothrow));
+            if (data_ptr == nullptr) [[unlikely]] { std::terminate(); }
+        } else {
+            std::destroy_at(data_ptr);
+        }
+        std::construct_at(data_ptr, T::create(std::forward<Args>(args)...));
         return self.deref();
     }
 
@@ -353,3 +493,9 @@ private:
 
     unique_handle<T> m_data;
 };
+
+template <typename T>
+optional(unique_handle<T>&) -> optional<unique_handle<T>>;
+
+template <typename T>
+optional(unique_handle<T>&&) -> optional<unique_handle<T>>;

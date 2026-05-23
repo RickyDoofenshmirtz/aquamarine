@@ -1,0 +1,109 @@
+BasedOnStyle: LLVM
+ColumnLimit: 100
+IndentWidth: 4
+TabWidth: 4
+
+Language: Cpp
+Standard: Latest
+
+AccessModifierOffset: -4
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+AlignConsecutiveAssignments: Consecutive
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: Consecutive
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+AlignAfterOpenBracket: AlwaysBreak #BlockIndent
+
+AlignArrayOfStructures: Right
+
+BinPackArguments: false
+AllowAllArgumentsOnNextLine: false
+
+BinPackParameters: false
+BreakFunctionDefinitionParameters: false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+AllowShortBlocksOnASingleLine: Always
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+AllowShortLambdasOnASingleLine: All
+AllowShortNamespacesOnASingleLine: true
+AllowShortCompoundRequirementOnASingleLine: true
+# AllowShortRecordOnASingleLine: Always # clang-23
+
+LambdaBodyIndentation: Signature #OuterScope
+
+BreakInheritanceList: BeforeColon
+BreakConstructorInitializers: BeforeColon
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true
+  AfterStruct: true
+  AfterControlStatement: MultiLine
+  AfterEnum: true
+  AfterExternBlock: false
+  AfterFunction: true
+  AfterNamespace: false
+  AfterUnion: false
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: true
+  SplitEmptyFunction: true
+  SplitEmptyNamespace : false
+  SplitEmptyRecord: true
+
+BreakAfterAttributes: Leave
+BreakTemplateDeclarations: Leave
+BreakBeforeTemplateCloser: false
+BreakBeforeConceptDeclarations: true
+
+AllowBreakBeforeNoexceptSpecifier: OnlyWithParen
+
+Cpp11BracedListStyle: false
+
+FixNamespaceComments: true
+
+IndentAccessModifiers: false
+IndentExternBlock: Indent
+IndentPPDirectives: BeforeHash
+IndentRequiresClause: true
+NamespaceIndentation: All
+
+PackConstructorInitializers: NextLineOnly
+
+MaxEmptyLinesToKeep: 1
+
+NumericLiteralCase:
+  ExponentLetter: Lower
+  HexDigit: Lower
+  Prefix: Lower
+  Suffix: Upper
+
+PenaltyReturnTypeOnItsOwnLine: 200
+PenaltyBreakScopeResolution: 100
+
+# RemoveEmptyLinesInUnwrappedLines: true
+
+SeparateDefinitionBlocks: Leave
+# SeparateDefinitionBlocks: Always
+
+ShortNamespaceLines: 50
+
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: true
+  AfterFunctionDeclarationName: false
+  AfterFunctionDefinitionName: false
+  AfterOverloadedOperator: false
+  AfterPlacementOperator: false
+  BeforeNonEmptyParentheses: false
