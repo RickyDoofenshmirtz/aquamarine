@@ -124,18 +124,21 @@ public:
     }
 
     [[nodiscard]]
-    auto operator->() noexcept -> T*
+    auto operator->() & noexcept -> T*
     {
         assert(!null_after_move());
         return m_data_ptr;
     }
 
     [[nodiscard]]
-    auto operator->() const noexcept -> T const*
+    auto operator->() const& noexcept -> T const*
     {
         assert(!null_after_move());
         return m_data_ptr;
     }
+
+    auto operator->() && noexcept      = delete;
+    auto operator->() const&& noexcept = delete;
 
     [[nodiscard]] auto value() & noexcept -> T& { return **this; }
     [[nodiscard]] auto value() const& noexcept -> T const& { return **this; }
@@ -295,18 +298,21 @@ public:
     }
 
     [[nodiscard]]
-    auto operator->() noexcept -> unique_handle<T>*
+    auto operator->() & noexcept -> unique_handle<T>*
     {
         assert(has_value());
         return std::addressof(m_data);
     }
 
     [[nodiscard]]
-    auto operator->() const noexcept -> unique_handle<T> const*
+    auto operator->() const& noexcept -> unique_handle<T> const*
     {
         assert(has_value());
         return std::addressof(m_data);
     }
+
+    auto operator->() && noexcept      = delete;
+    auto operator->() const&& noexcept = delete;
 
     [[nodiscard]]
     auto value() & noexcept -> unique_handle<T>&

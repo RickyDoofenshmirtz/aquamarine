@@ -148,18 +148,21 @@ public:
     }
 
     [[nodiscard]]
-    auto operator->() noexcept -> T*
+    auto operator->() & noexcept -> T*
     {
         assert(has_value());
         return std::addressof(*m_data);
     }
 
     [[nodiscard]]
-    auto operator->() const noexcept -> T const*
+    auto operator->() const& noexcept -> T const*
     {
         assert(has_value());
         return std::addressof(*m_data);
     }
+
+    auto operator->() && noexcept      = delete;
+    auto operator->() const&& noexcept = delete;
 
     [[nodiscard]]
     auto value() & noexcept -> T&
