@@ -279,7 +279,7 @@ public:
 
     auto emplace(T& src) noexcept -> T& { return m_data.emplace(src); }
 
-    void reset() noexcept { m_data.reset(); }
+    void reset() & noexcept { m_data.reset(); }
 
     [[nodiscard]] explicit operator bool() const noexcept { return m_data.has_value(); }
 
