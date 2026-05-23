@@ -344,6 +344,7 @@ private:
 
 namespace opt {
     template <typename T>
+    [[nodiscard]]
     auto take(T& data) noexcept -> optional<T>
     {
         return optional<T>{ std::move(data) }; //
