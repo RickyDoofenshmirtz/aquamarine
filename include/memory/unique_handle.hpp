@@ -146,6 +146,16 @@ public:
     [[nodiscard]] auto value() && noexcept -> T&& { return std::move(**this); }
     [[nodiscard]] auto value() const&& noexcept -> T const&& { return std::move(**this); }
 
+    auto eject() noexcept -> T
+    {
+        assert(!null_after_move());
+        auto data = std::move(*m_data_ptr);
+        std::destroy_at(m_data_ptr);
+        ::operator delete(m_data_ptr);
+        m_data_ptr = nullptr;
+        return data;
+    }
+
 private:
     explicit unique_handle(T* data_ptr) noexcept
         : m_data_ptr(data_ptr)
@@ -421,9 +431,8 @@ public:
 
     auto eject_deref() noexcept -> optional<T>
     {
-        auto elm = eject();
-        if (!elm) { return std::nullopt; }
-        return optional<T>{ std::move(elm.deref()) };
+        if (is_empty()) { return std::nullopt; }
+        return optional<T>{ m_data.eject() };
     }
 
     template <typename... Args>
