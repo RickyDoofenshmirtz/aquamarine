@@ -92,48 +92,48 @@ public:
     [[nodiscard]] auto ptr() const noexcept -> T const* { return m_data_ptr; }
 
     [[nodiscard]]
-    auto valueless_after_move() const noexcept -> bool
+    auto null_after_move() const noexcept -> bool
     { return m_data_ptr == nullptr; }
 
     [[nodiscard]]
     auto operator*() & noexcept -> T&
     {
-        assert(!valueless_after_move());
+        assert(!null_after_move());
         return *m_data_ptr;
     }
 
     [[nodiscard]]
     auto operator*() const& noexcept -> T const&
     {
-        assert(!valueless_after_move());
+        assert(!null_after_move());
         return *m_data_ptr;
     }
 
     [[nodiscard]]
     auto operator*() && noexcept -> T&&
     {
-        assert(!valueless_after_move());
+        assert(!null_after_move());
         return std::move(*m_data_ptr);
     }
 
     [[nodiscard]]
     auto operator*() const&& noexcept -> T const&&
     {
-        assert(!valueless_after_move());
+        assert(!null_after_move());
         return std::move(*m_data_ptr);
     }
 
     [[nodiscard]]
     auto operator->() noexcept -> T*
     {
-        assert(!valueless_after_move());
+        assert(!null_after_move());
         return m_data_ptr;
     }
 
     [[nodiscard]]
     auto operator->() const noexcept -> T const*
     {
-        assert(!valueless_after_move());
+        assert(!null_after_move());
         return m_data_ptr;
     }
 
