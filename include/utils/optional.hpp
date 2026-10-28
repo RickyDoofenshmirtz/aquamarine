@@ -188,14 +188,14 @@ public:
     [[nodiscard]]
     auto as_ref() & noexcept -> optional<T&>
     {
-        if (is_empty()) { return std::nullopt; }
+        if (is_empty()) { return optional<T&>{}; }
         return optional<T&>{ *m_data };
     }
 
     [[nodiscard]]
     auto as_ref() const& noexcept -> optional<T const&>
     {
-        if (is_empty()) { return std::nullopt; }
+        if (is_empty()) { return optional<T const&>{}; }
         return optional<T const&>{ *m_data };
     }
 
@@ -219,7 +219,7 @@ public:
 
     auto eject() noexcept -> optional<T>
     {
-        if (is_empty()) { return std::nullopt; }
+        if (is_empty()) { return optional<T>{}; }
         auto data = optional{ std::move(*m_data) };
         m_data.reset();
         return data;

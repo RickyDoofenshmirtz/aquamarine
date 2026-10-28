@@ -8,7 +8,6 @@
 #include <exception>
 #include <memory>
 #include <new>
-#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -54,13 +53,13 @@ public:
     static auto try_create(Args&&... args) noexcept -> optional<unique_handle>
     {
         void* ptr = ::operator new(sizeof(T), std::nothrow);
-        if (ptr == nullptr) [[unlikely]] { return std::nullopt; }
+        if (ptr == nullptr) [[unlikely]] { return optional<unique_handle>{}; }
         try {
             T* data_ptr = new(ptr) T(std::forward<Args>(args)...);
-            return optional{ unique_handle{ data_ptr } };
+            return optional<unique_handle>::from_raw(data_ptr);
         } catch (...) {
             ::operator delete(ptr);
-            return std::nullopt;
+            return optional<unique_handle>{};
         }
     }
 
@@ -84,8 +83,7 @@ public:
     static auto from_raw(T*& data_ptr) noexcept -> optional<unique_handle>
         requires(std::is_nothrow_destructible_v<T>)
     {
-        if (data_ptr == nullptr) { return std::nullopt; }
-        return optional{ unique_handle{ std::exchange(data_ptr, nullptr) } };
+        return optional<unique_handle>::from_raw(data_ptr); //
     }
 
     [[nodiscard]] auto ptr() noexcept -> T* { return m_data_ptr; }
@@ -257,6 +255,13 @@ public:
         }
     }
 
+    [[nodiscard]]
+    static auto from_raw(T*& data_ptr) noexcept -> optional
+        requires(std::is_nothrow_destructible_v<T>)
+    {
+        return optional{ std::exchange(data_ptr, nullptr) }; //
+    }
+
     [[nodiscard]] explicit operator bool() const noexcept { return m_data.m_data_ptr != nullptr; }
 
     [[nodiscard]] auto has_value() const noexcept -> bool { return m_data.m_data_ptr != nullptr; }
@@ -386,14 +391,14 @@ public:
     [[nodiscard]]
     auto as_ref() & noexcept -> optional<unique_handle<T>&>
     {
-        if (is_empty()) { return std::nullopt; }
+        if (is_empty()) { return optional<unique_handle<T>&>{}; }
         return optional<unique_handle<T>&>{ m_data };
     }
 
     [[nodiscard]]
     auto as_ref() const& noexcept -> optional<unique_handle<T> const&>
     {
-        if (is_empty()) { return std::nullopt; }
+        if (is_empty()) { return optional<unique_handle<T> const&>{}; }
         return optional<unique_handle<T> const&>{ m_data };
     }
 
@@ -403,14 +408,14 @@ public:
     [[nodiscard]]
     auto as_deref() & noexcept -> optional<T&>
     {
-        if (is_empty()) { return std::nullopt; }
+        if (is_empty()) { return optional<T&>{}; }
         return optional<T&>{ m_data.value() };
     }
 
     [[nodiscard]]
     auto as_deref() const& noexcept -> optional<T const&>
     {
-        if (is_empty()) { return std::nullopt; }
+        if (is_empty()) { return optional<T const&>{}; }
         return optional<T const&>{ m_data.value() };
     }
 
@@ -419,14 +424,14 @@ public:
 
     auto eject() noexcept -> optional<unique_handle<T>>
     {
-        if (is_empty()) { return std::nullopt; }
+        if (is_empty()) { return optional<unique_handle<T>>{}; }
         T* data_ptr = std::exchange(m_data.m_data_ptr, nullptr);
         return optional{ data_ptr };
     }
 
     auto eject_deref() noexcept -> optional<T>
     {
-        if (is_empty()) { return std::nullopt; }
+        if (is_empty()) { return optional<T>{}; }
         return optional<T>{ m_data.eject() };
     }
 
