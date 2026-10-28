@@ -207,11 +207,6 @@ public:
     {
     }
 
-    optional([[maybe_unused]] std::nullopt_t _) noexcept
-        : m_data(nullptr)
-    {
-    }
-
     explicit optional(unique_handle<T>& data) noexcept
         : m_data(std::move(data))
     {
@@ -270,11 +265,11 @@ public:
 
     [[nodiscard]]
     auto begin() noexcept -> iterator
-    { return (has_value()) ? std::addressof(m_data) : nullptr; }
+    { return has_value() ? std::addressof(m_data) : nullptr; }
 
     [[nodiscard]]
     auto begin() const noexcept -> const_iterator
-    { return (has_value()) ? std::addressof(m_data) : nullptr; }
+    { return has_value() ? std::addressof(m_data) : nullptr; }
 
     [[nodiscard]] auto end() noexcept -> iterator { return begin() + has_value(); }
     [[nodiscard]] auto end() const noexcept -> const_iterator { return begin() + has_value(); }

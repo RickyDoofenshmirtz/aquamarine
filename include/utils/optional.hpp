@@ -11,8 +11,6 @@
 #include <type_traits>
 #include <utility>
 
-constexpr auto nullopt = std::nullopt;
-
 template <typename T>
 class optional
 {
@@ -22,11 +20,6 @@ public:
     using const_iterator = std::optional<T>::const_iterator;
 
     explicit optional() noexcept
-        : m_data(std::nullopt)
-    {
-    }
-
-    optional([[maybe_unused]] std::nullopt_t _) noexcept
         : m_data(std::nullopt)
     {
     }
@@ -257,11 +250,6 @@ public:
     using iterator   = std::optional<T&>::iterator;
 
     explicit optional() noexcept
-        : m_data(std::nullopt)
-    {
-    }
-
-    optional([[maybe_unused]] std::nullopt_t _) noexcept
         : m_data(std::nullopt)
     {
     }
