@@ -86,6 +86,22 @@ public:
         return optional<unique_handle>::from_raw(data_ptr); //
     }
 
+    [[nodiscard]]
+    auto clone() const noexcept -> unique_handle
+        requires(clonable<T> || std::is_nothrow_copy_constructible_v<T>)
+    {
+        assert(!null_after_move());
+        void* ptr = ::operator new(sizeof(T), std::nothrow);
+        if (ptr == nullptr) [[unlikely]] { std::terminate(); }
+        T* data_ptr{};
+        if constexpr (clonable<T>) {
+            data_ptr = new(ptr) T(m_data_ptr->clone());
+        } else {
+            data_ptr = new(ptr) T(*m_data_ptr);
+        }
+        return unique_handle{ data_ptr };
+    }
+
     [[nodiscard]] auto ptr() noexcept -> T* { return m_data_ptr; }
     [[nodiscard]] auto ptr() const noexcept -> T const* { return m_data_ptr; }
 
