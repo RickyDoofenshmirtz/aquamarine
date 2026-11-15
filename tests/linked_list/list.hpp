@@ -80,6 +80,8 @@ public:
 
     static auto create() noexcept -> linked_list { return {}; }
 
+    auto is_empty() noexcept -> bool { return m_root.is_empty(); }
+
     template <typename... Args>
     auto emplace_back(Args&&... args) noexcept -> T&
     {

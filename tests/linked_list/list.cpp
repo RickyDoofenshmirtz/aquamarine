@@ -1,7 +1,8 @@
 #include "list.hpp"
+#include "utils/optional.hpp"
 #include "utils/traits.hpp"
 
-#include <print>
+#include <cstdlib>
 
 namespace {
     class coordinate
@@ -13,6 +14,11 @@ namespace {
 
         auto x() const noexcept -> int { return m_x; }
         auto y() const noexcept -> int { return m_y; }
+
+        auto operator==(const coordinate& src) const noexcept -> bool
+        {
+            return m_x == src.m_x && m_y == src.m_y; //
+        }
 
     private:
         coordinate(int x, int y) noexcept
@@ -26,38 +32,42 @@ namespace {
 
     static_assert(creatable<coordinate, int, int>);
 
-    void func() noexcept
+    template <typename T>
+    auto correct_last(const optional<T>& val, const T& expected_val) noexcept -> bool
+    {
+        if (!val) { return false; }
+        if (val.value() != expected_val) { return false; }
+        return true;
+    }
+
+    auto func() noexcept -> bool
     {
         {
             auto l = linked_list<int>::create();
             l.emplace_back(1);
             l.emplace_back(2);
             l.emplace_back(3);
-            l.print();
-            if (auto last = l.pop_back()) { std::println("last = {}", *last); }
-            l.print();
-            if (auto last = l.pop_back()) { std::println("last = {}", *last); }
-            l.print();
-            if (auto last = l.pop_back()) { std::println("last = {}", *last); }
-            l.print();
-            if (auto last = l.pop_back()) { std::println("last = {}", *last); }
-            l.print();
+            if (!correct_last(l.pop_back(), 3)) { return false; }
+            if (!correct_last(l.pop_back(), 2)) { return false; }
+            if (!correct_last(l.pop_back(), 1)) { return false; }
+            if (l.pop_back().has_value()) { return false; }
         }
         {
             auto l = linked_list<coordinate>::create();
             l.emplace_back(1, 2);
             l.emplace_back(5, 6);
             l.emplace_back(8, 9);
-            while (auto last = l.pop_back()) {
-                const auto c = *last;
-                std::println("x = {}, y = {}", c.x(), c.y());
-            }
+            if (!correct_last(l.pop_back(), coordinate::create(8, 9))) { return false; }
+            if (!correct_last(l.pop_back(), coordinate::create(5, 6))) { return false; }
+            if (!correct_last(l.pop_back(), coordinate::create(1, 2))) { return false; }
+            if (l.pop_back().has_value()) { return false; }
         }
+        return true;
     }
 } // namespace
 
 int main()
 {
-    func();
-    return 0;
+    if (!func()) { return EXIT_FAILURE; }
+    return EXIT_SUCCESS;
 }
