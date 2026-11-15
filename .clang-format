@@ -35,7 +35,7 @@ AllowShortLoopsOnASingleLine: true
 AllowShortLambdasOnASingleLine: All
 AllowShortNamespacesOnASingleLine: true
 AllowShortCompoundRequirementOnASingleLine: true
-# AllowShortRecordOnASingleLine: Always # clang-23
+AllowShortRecordOnASingleLine: Always
 
 LambdaBodyIndentation: Signature #OuterScope
 
@@ -92,7 +92,6 @@ PenaltyBreakScopeResolution: 100
 # RemoveEmptyLinesInUnwrappedLines: true
 
 SeparateDefinitionBlocks: Leave
-# SeparateDefinitionBlocks: Always
 
 ShortNamespaceLines: 50
 
