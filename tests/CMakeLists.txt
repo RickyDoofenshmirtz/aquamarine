@@ -1,0 +1,11 @@
+file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+
+foreach(TEST_FILE ${TEST_SOURCES})
+    get_filename_component(EXE_NAME ${TEST_FILE} NAME_WE)
+    add_executable(${EXE_NAME} ${TEST_FILE})
+    add_test(NAME ${EXE_NAME} COMMAND ${EXE_NAME})
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_link_libraries(${EXE_NAME} PRIVATE stdc++exp)
+        message(STATUS "using g++, linking stdc++exp")
+    endif()
+endforeach()
