@@ -216,7 +216,7 @@ public:
     using iterator       = unique_handle<T>*;
     using const_iterator = unique_handle<T> const*;
 
-    explicit optional() noexcept
+    optional() noexcept
         : m_data(nullptr)
     {
     }
