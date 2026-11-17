@@ -19,7 +19,7 @@ public:
     using iterator       = std::optional<T>::iterator;
     using const_iterator = std::optional<T>::const_iterator;
 
-    explicit optional() noexcept
+    optional() noexcept
         : m_data(std::nullopt)
     {
     }
@@ -249,7 +249,7 @@ public:
     using value_type = std::optional<T&>::value_type;
     using iterator   = std::optional<T&>::iterator;
 
-    explicit optional() noexcept
+    optional() noexcept
         : m_data(std::nullopt)
     {
     }

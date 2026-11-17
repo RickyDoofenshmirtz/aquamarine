@@ -66,16 +66,14 @@ public:
     template <typename... Args>
         requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
     [[nodiscard]]
-    static auto force_create(Args&&... args) noexcept -> unique_handle
+    static auto create_or_throw(Args&&... args) -> unique_handle
     {
-        void* ptr{};
+        void* ptr = ::operator new(sizeof(T));
         try {
-            ptr         = ::operator new(sizeof(T));
-            T* data_ptr = new(ptr) T(std::forward<Args>(args)...);
-            return unique_handle{ data_ptr };
+            return unique_handle{ new(ptr) T(std::forward<Args>(args)...) };
         } catch (...) {
             ::operator delete(ptr);
-            std::terminate();
+            throw;
         }
     }
 
@@ -216,7 +214,7 @@ public:
     using iterator       = unique_handle<T>*;
     using const_iterator = unique_handle<T> const*;
 
-    explicit optional() noexcept
+    optional() noexcept
         : m_data(nullptr)
     {
     }
@@ -258,16 +256,14 @@ public:
     template <typename... Args>
         requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
     [[nodiscard]]
-    static auto force_create(Args&&... args) noexcept -> optional
+    static auto create_or_throw(Args&&... args) -> optional
     {
-        void* ptr = ::operator new(sizeof(T), std::nothrow);
-        if (ptr == nullptr) [[unlikely]] { std::terminate(); }
+        void* ptr = ::operator new(sizeof(T));
         try {
-            T* data_ptr = new(ptr) T(std::forward<Args>(args)...);
-            return optional{ data_ptr };
+            return optional{ new(ptr) T(std::forward<Args>(args)...) };
         } catch (...) {
             ::operator delete(ptr);
-            std::terminate();
+            throw;
         }
     }
 
@@ -483,12 +479,11 @@ public:
 
     template <typename... Args>
         requires(std::is_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
-    auto force_emplace(this auto& self, Args&&... args) noexcept -> T&
+    auto emplace_or_throw(this auto& self, Args&&... args) -> T&
     {
         auto& data_ptr = self.m_data.m_data_ptr;
         if (self.is_empty()) {
-            data_ptr = static_cast<T*>(::operator new(sizeof(T), std::nothrow));
-            if (data_ptr == nullptr) [[unlikely]] { std::terminate(); }
+            data_ptr = static_cast<T*>(::operator new(sizeof(T)));
         } else {
             std::destroy_at(data_ptr);
         }
@@ -496,7 +491,7 @@ public:
             std::construct_at(data_ptr, std::forward<Args>(args)...);
         } catch (...) {
             ::operator delete(data_ptr);
-            std::terminate();
+            throw;
         }
         return self.deref();
     }
