@@ -158,6 +158,13 @@ public:
     [[nodiscard]] auto value() && noexcept -> T&& { return std::move(**this); }
     [[nodiscard]] auto value() const&& noexcept -> T const&& { return std::move(**this); }
 
+    [[nodiscard]] auto as_opt() & noexcept -> optional<T&> { return optional<T&>{ **this }; }
+    [[nodiscard]] auto as_opt() const& noexcept -> optional<T const&>
+    { return optional<T const&>{ **this }; }
+
+    auto as_opt() &&      = delete;
+    auto as_opt() const&& = delete;
+
     auto eject() noexcept -> T
     {
         assert(!null_after_move());
