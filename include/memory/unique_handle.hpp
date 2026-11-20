@@ -454,6 +454,17 @@ public:
         return optional<T>{ m_data.eject() };
     }
 
+    auto emplace(this auto& self, unique_handle<T> data) noexcept -> T&
+    {
+        auto& data_ptr = self.m_data.m_data_ptr;
+        if (self.has_value()) {
+            std::destroy_at(data_ptr);
+            ::operator delete(data_ptr);
+        }
+        data_ptr = std::exchange(data.m_data_ptr, nullptr);
+        return self.deref();
+    }
+
     template <typename... Args>
         requires(std::is_nothrow_constructible_v<T, Args...> && std::is_nothrow_destructible_v<T>)
     auto emplace(this auto& self, Args&&... args) noexcept -> T&
