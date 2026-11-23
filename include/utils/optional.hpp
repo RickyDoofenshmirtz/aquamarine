@@ -202,12 +202,14 @@ public:
     auto as_ref() &&      = delete;
     auto as_ref() const&& = delete;
 
+    [[nodiscard]]
     auto as_deref() & noexcept
     {
         if (is_empty()) { return optional<std::iter_reference_t<T>>{}; }
         return optional<std::iter_reference_t<T>>{ **m_data };
     }
 
+    [[nodiscard]]
     auto as_deref() const& noexcept
     {
         if (is_empty()) { return optional<std::iter_reference_t<const T>>{}; }
@@ -303,12 +305,14 @@ public:
         return m_data_ptr;
     }
 
+    [[nodiscard]]
     auto value() const noexcept -> T&
     {
         assert(has_value());
         return *m_data_ptr;
     }
 
+    [[nodiscard]]
     auto as_deref() const noexcept
     {
         if (is_empty()) { return optional<std::iter_reference_t<T>>{}; }
