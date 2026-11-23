@@ -245,17 +245,20 @@ optional(T&&) -> optional<T>;
 template <typename T>
 class optional<T&>
 {
+    template <typename U>
+    friend class optional;
+
 public:
-    using value_type = std::optional<T&>::value_type;
-    using iterator   = std::optional<T&>::iterator;
+    using value_type = T;
+    using iterator   = T*;
 
     optional() noexcept
-        : m_data(std::nullopt)
+        : m_data_ptr(nullptr)
     {
     }
 
     explicit optional(T& data) noexcept
-        : m_data(data)
+        : m_data_ptr(std::addressof(data))
     {
     }
 
@@ -264,73 +267,56 @@ public:
     template <typename U>
         requires(std::is_nothrow_constructible_v<T&, U&>)
     explicit(!std::is_convertible_v<U&, T&>) optional(const optional<U&>& data) noexcept
-        : m_data(data.value())
+        : m_data_ptr(data.m_data_ptr)
     {
     }
 
-    auto emplace(T& src) noexcept -> T& { return m_data.emplace(src); }
+    auto emplace(T& data) noexcept -> T& { return *(m_data_ptr = std::addressof(data)); }
 
-    void reset() & noexcept { m_data.reset(); }
+    void reset() & noexcept { m_data_ptr = nullptr; }
 
-    [[nodiscard]] explicit operator bool() const noexcept { return m_data.has_value(); }
+    [[nodiscard]] explicit operator bool() const noexcept { return m_data_ptr != nullptr; }
 
-    [[nodiscard]] auto has_value() const noexcept -> bool { return m_data.has_value(); }
+    [[nodiscard]] auto has_value() const noexcept -> bool { return m_data_ptr != nullptr; }
 
-    [[nodiscard]] auto is_empty() const noexcept -> bool { return !m_data.has_value(); }
-
-    [[nodiscard]] auto begin(this auto&& self) noexcept { return self.m_data.begin(); }
-
-    [[nodiscard]] auto end(this auto&& self) noexcept { return self.m_data.end(); }
+    [[nodiscard]] auto is_empty() const noexcept -> bool { return m_data_ptr == nullptr; }
 
     [[nodiscard]]
-    auto operator*() noexcept -> T&
+    auto begin() const noexcept
+    {
+        return has_value() ? std::addressof(*m_data_ptr) : nullptr; //
+    }
+
+    [[nodiscard]] auto end() const noexcept { return begin() + has_value(); }
+
+    [[nodiscard]]
+    auto operator*() const noexcept -> T&
     {
         assert(has_value());
-        return *m_data;
+        return *m_data_ptr;
     }
 
     [[nodiscard]]
-    auto operator*() const noexcept -> T const&
+    auto operator->() const noexcept -> T*
     {
         assert(has_value());
-        return *m_data;
+        return m_data_ptr;
     }
 
-    [[nodiscard]]
-    auto operator->() noexcept -> T*
+    auto value() const noexcept -> T&
     {
         assert(has_value());
-        return m_data.operator->();
-    }
-
-    [[nodiscard]]
-    auto operator->() const noexcept -> T const*
-    {
-        assert(has_value());
-        return m_data.operator->();
-    }
-
-    [[nodiscard]]
-    auto value(this auto&& self) noexcept -> decltype(auto)
-    {
-        assert(self);
-        return (*self);
-    }
-
-    auto as_deref() noexcept
-    {
-        if (is_empty()) { return optional<std::iter_reference_t<T>>{}; }
-        return optional<std::iter_reference_t<T>>{ **m_data };
+        return *m_data_ptr;
     }
 
     auto as_deref() const noexcept
     {
-        if (is_empty()) { return optional<std::iter_reference_t<const T>>{}; }
-        return optional<std::iter_reference_t<const T>>{ **m_data };
+        if (is_empty()) { return optional<std::iter_reference_t<T>>{}; }
+        return optional<std::iter_reference_t<T>>{ **m_data_ptr };
     }
 
 private:
-    std::optional<T&> m_data;
+    T* m_data_ptr;
 };
 
 namespace opt {
